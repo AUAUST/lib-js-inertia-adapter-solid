@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.2.3
+
+### Patch Changes
+
+- a1b2a19: Update dependencies
+
 ## 0.2.2
 
 ### Patch Changes
