@@ -6,7 +6,7 @@ import {
   isServer,
   renderToString,
 } from "solid-js/web";
-import App, { type InertiaAppProps } from "./App";
+import { App, type InertiaAppProps } from "./App";
 
 type CreateInertiaBaseOptions = {
   id?: string;
@@ -39,13 +39,13 @@ type CreateInertiaSSROptions = CreateInertiaBaseOptions & {
 };
 export type CreateInertiaSSRReturnType = { head: string[]; body: string };
 
-export default async function createInertiaApp(
+export async function createInertiaApp(
   options: CreateInertiaCSROptions
 ): Promise<CreateInertiaCSRReturnType>;
-export default async function createInertiaApp(
+export async function createInertiaApp(
   options: CreateInertiaSSROptions
 ): Promise<CreateInertiaSSRReturnType>;
-export default async function createInertiaApp({
+export async function createInertiaApp({
   id = "app",
   page = undefined,
   resolve,

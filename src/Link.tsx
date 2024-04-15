@@ -40,7 +40,7 @@ type InertiaLinkProps = {
 
 const noop = () => {};
 
-export default function Link(
+export function Link(
   _props: ParentProps<InertiaLinkProps> & ComponentProps<InertiaLinkProps["as"]>
 ) {
   let [props, attributes] = splitProps(_props, [

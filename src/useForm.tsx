@@ -15,7 +15,7 @@ import {
   type Store,
 } from "solid-js/store";
 import { isServer } from "solid-js/web";
-import useRemember from "./useRemember";
+import { useRemember } from "./useRemember";
 
 type FormState = Record<string, unknown>;
 type FormErrors<TForm extends FormState> = Partial<Record<keyof TForm, string>>;
@@ -104,8 +104,7 @@ export function useForm<TForm extends FormState>(
   rememberKey: string,
   initialValues?: TForm
 ): InertiaForm<TForm>;
-
-export default function useForm<TForm extends FormState>(
+export function useForm<TForm extends FormState>(
   rememberKeyOrInitialValues?: string | TForm,
   maybeInitialValues?: TForm
 ): InertiaForm<TForm> {

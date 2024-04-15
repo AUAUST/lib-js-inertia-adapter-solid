@@ -7,7 +7,7 @@ import {
 } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { isServer } from "solid-js/web";
-import PageContext from "./PageContext";
+import { PageContext } from "./PageContext";
 
 export type InertiaAppProps = {
   initialPage: Page;
@@ -40,7 +40,7 @@ function extractLayouts(component) {
   return [];
 }
 
-export default function App(props: ParentProps<InertiaAppProps>) {
+export function App(props: ParentProps<InertiaAppProps>) {
   const [current, setCurrent] = createStore<InertiaAppState>({
     component: props.initialComponent || null,
     layouts: extractLayouts(props.initialComponent || null),

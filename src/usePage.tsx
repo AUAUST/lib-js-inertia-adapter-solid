@@ -1,8 +1,8 @@
 import { type Page, type PageProps } from "@inertiajs/core";
 import { useContext } from "solid-js";
-import PageContext from "./PageContext";
+import { PageContext } from "./PageContext";
 
-export default function usePage<
+export function usePage<
   TPageProps extends PageProps = PageProps
 >(): Page<TPageProps> {
   const page = useContext(PageContext);

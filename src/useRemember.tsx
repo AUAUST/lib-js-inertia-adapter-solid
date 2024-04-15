@@ -2,7 +2,7 @@ import { router } from "@inertiajs/core";
 import { createEffect, createSignal, type Signal } from "solid-js";
 import { isServer } from "solid-js/web";
 
-export default function useRemember<State = unknown>(
+export function useRemember<State = unknown>(
   initialState: State,
   key?: string
 ): Signal<State> {
