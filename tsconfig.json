@@ -6,8 +6,7 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "types": ["node"],
-    "declaration": true,
-    "declarationDir": "dist/types"
+    "declaration": false
   },
-  "include": ["src/index.tsx", "src/server.tsx"]
+  "include": ["src/**/*"]
 }
