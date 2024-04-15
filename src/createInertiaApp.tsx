@@ -1,7 +1,6 @@
 import { setupProgress, type Page, type PageResolver } from "@inertiajs/core";
-import { Component, createComponent } from "solid-js";
+import { Component } from "solid-js";
 import {
-  Dynamic,
   generateHydrationScript,
   getAssets,
   isServer,
@@ -72,14 +71,11 @@ export default async function createInertiaApp({
   };
 
   if (isServer) {
-    const body = renderToString(() =>
-      createComponent(Dynamic, {
-        component: "div",
-        children: createComponent(App, props),
-        id,
-        "data-page": JSON.stringify(initialPage),
-      })
-    );
+    const body = renderToString(() => (
+      <div id={id} data-page={JSON.stringify(initialPage)}>
+        <App {...props} />
+      </div>
+    ));
 
     const head = [getAssets(), generateHydrationScript()];
 

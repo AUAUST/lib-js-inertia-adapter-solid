@@ -1,6 +1,6 @@
-import { Page } from '@inertiajs/core'
-import { createContext } from 'solid-js'
+import { Page } from "@inertiajs/core";
+import { createContext } from "solid-js";
 
-const PageContext = createContext<Page>()
+const PageContext = createContext<Page>();
 
-export default PageContext
+export default PageContext;

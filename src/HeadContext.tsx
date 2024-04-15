@@ -1,5 +1,5 @@
-import { createContext } from 'solid-js'
+import { createContext } from "solid-js";
 
-const HeadContext = createContext()
+const HeadContext = createContext();
 
-export default HeadContext
+export default HeadContext;

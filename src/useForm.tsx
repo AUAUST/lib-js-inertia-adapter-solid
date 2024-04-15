@@ -1,356 +1,396 @@
-import { GlobalEventsMap, Method, RequestPayload, router, VisitOptions } from '@inertiajs/core'
-import cloneDeep from 'lodash.clonedeep'
-import isEqual from 'lodash.isequal'
-import { batch, createMemo, createSignal } from 'solid-js'
-import { createStore, reconcile, SetStoreFunction, Store, unwrap } from 'solid-js/store'
-import { isServer } from 'solid-js/web'
-import useRemember from './useRemember'
+import { clone, equals } from "@auaust/primitive-kit/objects";
+import {
+  router,
+  type GlobalEventsMap,
+  type Method,
+  type RequestPayload,
+  type VisitOptions,
+} from "@inertiajs/core";
+import { batch, createMemo, createSignal } from "solid-js";
+import {
+  createStore,
+  reconcile,
+  unwrap,
+  type SetStoreFunction,
+  type Store,
+} from "solid-js/store";
+import { isServer } from "solid-js/web";
+import useRemember from "./useRemember";
 
-type FormState = Record<string, unknown>
-type FormErrors<TForm extends FormState> = Partial<Record<keyof TForm, string>>
+type FormState = Record<string, unknown>;
+type FormErrors<TForm extends FormState> = Partial<Record<keyof TForm, string>>;
 
 interface InertiaFormProps<TForm extends FormState> {
-  get isDirty(): boolean
+  get isDirty(): boolean;
 
-  defaults(): this
+  defaults(): this;
 
-  defaults(field: keyof TForm, value: unknown): this
+  defaults(field: keyof TForm, value: unknown): this;
 
-  defaults(fields: TForm): this
+  defaults(fields: TForm): this;
 
-  reset(...fields: string[]): this
+  reset(...fields: string[]): this;
 
-  transform(callback: (data: TForm) => RequestPayload): this
+  transform(callback: (data: TForm) => RequestPayload): this;
 
-  get errors(): FormErrors<TForm>
+  get errors(): FormErrors<TForm>;
 
-  get hasErrors(): boolean
+  get hasErrors(): boolean;
 
-  setError(field: keyof TForm, value: string): this
+  setError(field: keyof TForm, value: string): this;
 
-  setError(fields: Record<keyof TForm, string>): this
+  setError(fields: Record<keyof TForm, string>): this;
 
-  clearErrors(...fields: string[]): this
+  clearErrors(...fields: string[]): this;
 
-  get processing(): boolean
+  get processing(): boolean;
 
-  get progress(): GlobalEventsMap['progress']['parameters'][0]
+  get progress(): GlobalEventsMap["progress"]["parameters"][0];
 
-  get wasSuccessful(): boolean
+  get wasSuccessful(): boolean;
 
-  get recentlySuccessful(): boolean
+  get recentlySuccessful(): boolean;
 
-  get(url: string, options?: Partial<VisitOptions>): void
+  get(url: string, options?: Partial<VisitOptions>): void;
 
-  post(url: string, options?: Partial<VisitOptions>): void
+  post(url: string, options?: Partial<VisitOptions>): void;
 
-  put(url: string, options?: Partial<VisitOptions>): void
+  put(url: string, options?: Partial<VisitOptions>): void;
 
-  patch(url: string, options?: Partial<VisitOptions>): void
+  patch(url: string, options?: Partial<VisitOptions>): void;
 
-  delete(url: string, options?: Partial<VisitOptions>): void
+  delete(url: string, options?: Partial<VisitOptions>): void;
 
-  submit(method: Method, url: string, options: Partial<VisitOptions>): void
+  submit(method: Method, url: string, options: Partial<VisitOptions>): void;
 
-  cancel(): void
+  cancel(): void;
 }
 
 function createRememberStore<TValue extends object>(
   value: TValue,
   key: string | undefined,
-  keySuffix: string,
+  keySuffix: string
 ): ReturnType<typeof createStore<TValue>> {
-  let restored = undefined
+  let restored = undefined;
 
   if (!isServer && key !== undefined) {
-    key = `${key}:${keySuffix}`
-    restored = router.restore(key)
+    key = `${key}:${keySuffix}`;
+    restored = router.restore(key);
   }
 
-  const [store, setStore] = createStore<TValue>(restored ?? value)
+  const [store, setStore] = createStore<TValue>(restored ?? value);
 
   function setStoreTrap(...args) {
-    // @ts-ignore
-    setStore(...args)
+    // @ts-expect-error
+    setStore(...args);
 
     if (!isServer && key !== undefined) {
-      router.remember(unwrap(store), key)
+      router.remember(unwrap(store), key);
     }
   }
 
-  return [store, setStoreTrap]
+  return [store, setStoreTrap];
 }
 
 export type InertiaForm<TForm extends FormState> = [
   get: Store<TForm> & InertiaFormProps<TForm>,
-  set: SetStoreFunction<TForm>,
-]
+  set: SetStoreFunction<TForm>
+];
 
-export function useForm<TForm extends FormState>(initialValues?: TForm): InertiaForm<TForm>
-export function useForm<TForm extends FormState>(rememberKey: string, initialValues?: TForm): InertiaForm<TForm>
+export function useForm<TForm extends FormState>(
+  initialValues?: TForm
+): InertiaForm<TForm>;
+export function useForm<TForm extends FormState>(
+  rememberKey: string,
+  initialValues?: TForm
+): InertiaForm<TForm>;
 
 export default function useForm<TForm extends FormState>(
   rememberKeyOrInitialValues?: string | TForm,
-  maybeInitialValues?: TForm,
+  maybeInitialValues?: TForm
 ): InertiaForm<TForm> {
-  const rememberKey = typeof rememberKeyOrInitialValues === 'string' ? rememberKeyOrInitialValues : undefined
+  const rememberKey =
+    typeof rememberKeyOrInitialValues === "string"
+      ? rememberKeyOrInitialValues
+      : undefined;
 
   const [defaults, setDefaults] = createSignal<TForm>(
-    typeof rememberKeyOrInitialValues === 'string' ? maybeInitialValues : rememberKeyOrInitialValues,
-  )
+    typeof rememberKeyOrInitialValues === "string"
+      ? maybeInitialValues
+      : rememberKeyOrInitialValues
+  );
 
-  const [data, setData] = createRememberStore<TForm>(cloneDeep(defaults()), rememberKey, 'data')
+  const [data, setData] = createRememberStore<TForm>(
+    clone(defaults()),
+    rememberKey,
+    "data"
+  );
   const dataMemo = createMemo(() =>
     unwrap(
       Object.keys(defaults()).reduce((carry, key) => {
-        carry[key] = data[key]
-        return carry
-      }, {}) as TForm,
-    ),
-  )
-  const isDirty = createMemo<boolean>(() => !isEqual(dataMemo(), defaults()))
+        carry[key] = data[key];
+        return carry;
+      }, {}) as TForm
+    )
+  );
+  const isDirty = createMemo<boolean>(() => !equals(dataMemo(), defaults()));
 
   const [errors, setErrors] = rememberKey
     ? useRemember<FormErrors<TForm>>({}, `${rememberKey}:errors`)
-    : createSignal<FormErrors<TForm>>({})
-  const hasErrors = createMemo<boolean>(() => Object.keys(errors()).length > 0)
+    : createSignal<FormErrors<TForm>>({});
+  const hasErrors = createMemo<boolean>(() => Object.keys(errors()).length > 0);
 
-  let cancelToken = null
-  let recentlySuccessfulTimeoutId = null
-  // @ts-ignore
-  let transform: (data: TForm) => RequestPayload = (data) => data
+  let cancelToken = null;
+  let recentlySuccessfulTimeoutId = null;
+  // @ts-expect-error
+  let transform: (data: TForm) => RequestPayload = (data) => data;
 
-  const [processing, setProcessing] = createSignal<boolean>(false)
-  const [progress, setProgress] = createSignal<GlobalEventsMap['progress']['parameters'][0]>(undefined)
-  const [wasSuccessful, setWasSuccessful] = createSignal<boolean>(false)
-  const [recentlySuccessful, setRecentlySuccessful] = createSignal<boolean>(false)
+  const [processing, setProcessing] = createSignal<boolean>(false);
+  const [progress, setProgress] =
+    createSignal<GlobalEventsMap["progress"]["parameters"][0]>(undefined);
+  const [wasSuccessful, setWasSuccessful] = createSignal<boolean>(false);
+  const [recentlySuccessful, setRecentlySuccessful] =
+    createSignal<boolean>(false);
 
   const store = {
     get isDirty() {
-      return isDirty()
+      return isDirty();
     },
 
-    defaults(fieldOrFields?: keyof TForm | Record<keyof TForm, unknown>, maybeValue?: unknown) {
-      if (typeof fieldOrFields === 'undefined') {
-        setDefaults((defaults) => Object.assign(defaults, cloneDeep(data)))
+    defaults(
+      fieldOrFields?: keyof TForm | Record<keyof TForm, unknown>,
+      maybeValue?: unknown
+    ) {
+      if (typeof fieldOrFields === "undefined") {
+        setDefaults((defaults) => Object.assign(defaults, clone(data)));
 
-        return this
+        return this;
       }
 
-      if (typeof fieldOrFields === 'string') {
-        // @ts-ignore
-        fieldOrFields = { [fieldOrFields]: maybeValue }
+      if (typeof fieldOrFields === "string") {
+        // @ts-expect-error
+        fieldOrFields = { [fieldOrFields]: maybeValue };
       }
 
       // setDefaults((defaults) => Object.assign(defaults, fieldOrFields))
 
-      return this
+      return this;
     },
 
     reset(...fields: string[]) {
       if (fields.length === 0) {
-        setData(reconcile(defaults()))
+        setData(reconcile(defaults()));
 
-        return this
+        return this;
       }
 
       setData(
         Object.keys(defaults())
           .filter((key) => fields.includes(key))
           .reduce((carry, key) => {
-            carry[key] = defaults()[key]
-            return carry
-          }, {}) as TForm,
-      )
+            carry[key] = defaults()[key];
+            return carry;
+          }, {}) as TForm
+      );
 
-      return this
+      return this;
     },
 
     transform(callback: typeof transform) {
-      transform = callback
+      transform = callback;
 
-      return this
+      return this;
     },
 
     get errors() {
-      return errors()
+      return errors();
     },
     get hasErrors() {
-      return hasErrors()
+      return hasErrors();
     },
-    setError(fieldOrFields: keyof TForm | Record<keyof TForm, string>, maybeValue?: string) {
-      if (typeof fieldOrFields === 'string') {
-        // @ts-ignore
-        fieldOrFields = { [fieldOrFields]: maybeValue }
+    setError(
+      fieldOrFields: keyof TForm | Record<keyof TForm, string>,
+      maybeValue?: string
+    ) {
+      if (typeof fieldOrFields === "string") {
+        // @ts-expect-error
+        fieldOrFields = { [fieldOrFields]: maybeValue };
       }
 
-      setErrors((errors) => Object.assign(errors, fieldOrFields))
+      setErrors((errors) => Object.assign(errors, fieldOrFields));
 
-      return this
+      return this;
     },
     clearErrors(...fields: string[]) {
       if (fields.length === 0) {
-        setErrors({})
+        setErrors({});
 
-        return this
+        return this;
       }
 
       setErrors((errors) =>
         Object.keys(defaults()).reduce(
-          (carry, field) => Object.assign(carry, !fields.includes(field) ? { [field]: errors[field] } : {}),
-          {},
-        ),
-      )
+          (carry, field) =>
+            Object.assign(
+              carry,
+              !fields.includes(field) ? { [field]: errors[field] } : {}
+            ),
+          {}
+        )
+      );
 
-      return this
+      return this;
     },
 
     get processing() {
-      return processing()
+      return processing();
     },
     get progress() {
-      return progress()
+      return progress();
     },
     get wasSuccessful() {
-      return wasSuccessful()
+      return wasSuccessful();
     },
     get recentlySuccessful() {
-      return recentlySuccessful()
+      return recentlySuccessful();
     },
 
     get(url: string, options: Partial<VisitOptions> = {}) {
-      this.submit('get', url, options)
+      this.submit("get", url, options);
     },
     post(url: string, options: Partial<VisitOptions> = {}) {
-      this.submit('post', url, options)
+      this.submit("post", url, options);
     },
     put(url: string, options: Partial<VisitOptions> = {}) {
-      this.submit('put', url, options)
+      this.submit("put", url, options);
     },
     patch(url: string, options: Partial<VisitOptions> = {}) {
-      this.submit('patch', url, options)
+      this.submit("patch", url, options);
     },
     delete(url: string, options: Partial<VisitOptions> = {}) {
-      this.submit('delete', url, options)
+      this.submit("delete", url, options);
     },
     submit(method: Method, url: string, options: Partial<VisitOptions> = {}) {
-      if (isServer) return
+      if (isServer) return;
 
-      const store = this
+      const store = this;
 
-      const data = transform(dataMemo())
+      const data = transform(dataMemo());
       const _options = {
         ...options,
         onCancelToken(token) {
-          cancelToken = token
+          cancelToken = token;
 
           if (options.onCancelToken) {
-            return options.onCancelToken(token)
+            return options.onCancelToken(token);
           }
         },
         onBefore(visit) {
           batch(() => {
-            setWasSuccessful(true)
-            setRecentlySuccessful(false)
-          })
-          clearTimeout(recentlySuccessfulTimeoutId)
+            setWasSuccessful(true);
+            setRecentlySuccessful(false);
+          });
+          clearTimeout(recentlySuccessfulTimeoutId);
 
           if (options.onBefore) {
-            return options.onBefore(visit)
+            return options.onBefore(visit);
           }
         },
         onStart(visit) {
-          setProcessing(true)
+          setProcessing(true);
 
           if (options.onStart) {
-            return options.onStart(visit)
+            return options.onStart(visit);
           }
         },
         onProgress(event) {
-          setProgress(event)
+          setProgress(event);
 
           if (options.onProgress) {
-            return options.onProgress(event)
+            return options.onProgress(event);
           }
         },
         async onSuccess(page) {
           batch(() => {
-            setProcessing(false)
-            setProgress(undefined)
-            setWasSuccessful(true)
-            setRecentlySuccessful(true)
+            setProcessing(false);
+            setProgress(undefined);
+            setWasSuccessful(true);
+            setRecentlySuccessful(true);
 
-            store.clearErrors()
-          })
+            store.clearErrors();
+          });
 
-          recentlySuccessfulTimeoutId = setTimeout(() => setRecentlySuccessful(false), 2000)
+          recentlySuccessfulTimeoutId = setTimeout(
+            () => setRecentlySuccessful(false),
+            2000
+          );
 
           // setDefaults(() => dataMemo())
 
           if (options.onSuccess) {
-            return await options.onSuccess(page)
+            return await options.onSuccess(page);
           }
         },
         onError(errors) {
           batch(() => {
-            setProcessing(false)
-            setProgress(undefined)
+            setProcessing(false);
+            setProgress(undefined);
 
-            store.clearErrors().setError(errors)
-          })
+            store.clearErrors().setError(errors);
+          });
 
           if (options.onError) {
-            return options.onError(errors)
+            return options.onError(errors);
           }
         },
         onCancel() {
           batch(() => {
-            setProcessing(false)
-            setProgress(undefined)
-          })
+            setProcessing(false);
+            setProgress(undefined);
+          });
 
           if (options.onCancel) {
-            return options.onCancel()
+            return options.onCancel();
           }
         },
         onFinish(visit) {
           batch(() => {
-            setProcessing(false)
-            setProgress(undefined)
-          })
-          cancelToken = null
+            setProcessing(false);
+            setProgress(undefined);
+          });
+          cancelToken = null;
 
           if (options.onFinish) {
-            return options.onFinish(visit)
+            return options.onFinish(visit);
           }
         },
-      }
+      };
 
-      if (method === 'delete') {
-        router.delete(url, { ..._options, data })
+      if (method === "delete") {
+        router.delete(url, { ..._options, data });
       } else {
-        router[method](url, data, _options)
+        router[method](url, data, _options);
       }
     },
 
     cancel() {
       if (cancelToken) {
-        cancelToken.cancel()
+        cancelToken.cancel();
       }
     },
-  }
+  };
 
   const proxy = new Proxy(store, {
     get(target, property) {
       if (property in target) {
-        return target[property]
+        return target[property];
       }
 
-      // @ts-ignore
-      return data[property]
+      // @ts-expect-error
+      return data[property];
     },
-  })
+  });
 
-  // @ts-ignore
-  return [proxy, setData]
+  // @ts-expect-error
+  return [proxy, setData];
 }

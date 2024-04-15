@@ -1,118 +1,127 @@
 import {
-  FormDataConvertible,
   mergeDataIntoQueryString,
-  Method,
-  PreserveStateOption,
-  Progress,
   router,
   shouldIntercept,
-} from '@inertiajs/core'
-import { ComponentProps, createComponent, JSX, mergeProps, ParentProps, splitProps } from 'solid-js'
-import { Dynamic, isServer } from 'solid-js/web'
+  type FormDataConvertible,
+  type Method,
+  type PreserveStateOption,
+  type Progress,
+} from "@inertiajs/core";
+import {
+  createComponent,
+  mergeProps,
+  splitProps,
+  type ComponentProps,
+  type JSX,
+  type ParentProps,
+} from "solid-js";
+import { Dynamic, isServer } from "solid-js/web";
 
 type InertiaLinkProps = {
-  as?: keyof JSX.IntrinsicElements
-  data?: Record<string, FormDataConvertible>
-  href: string
-  method?: Method
-  preserveScroll?: PreserveStateOption
-  preserveState?: PreserveStateOption
-  replace?: boolean
-  only?: string[]
-  headers?: Record<string, string>
-  queryStringArrayFormat?: 'indices' | 'brackets'
-  onClick?: (event: MouseEvent) => void
-  onCancelToken?: (cancelToken: any) => void
-  onBefore?: () => void
-  onStart?: () => void
-  onProgress?: (progress: Progress) => void
-  onFinish?: () => void
-  onCancel?: () => void
-  onSuccess?: () => void
-  onError?: () => void
-}
+  as?: keyof JSX.IntrinsicElements;
+  data?: Record<string, FormDataConvertible>;
+  href: string;
+  method?: Method;
+  preserveScroll?: PreserveStateOption;
+  preserveState?: PreserveStateOption;
+  replace?: boolean;
+  only?: string[];
+  headers?: Record<string, string>;
+  queryStringArrayFormat?: "indices" | "brackets";
+  onClick?: (event: MouseEvent) => void;
+  onCancelToken?: (cancelToken: any) => void;
+  onBefore?: () => void;
+  onStart?: () => void;
+  onProgress?: (progress: Progress) => void;
+  onFinish?: () => void;
+  onCancel?: () => void;
+  onSuccess?: () => void;
+  onError?: () => void;
+};
 
-const noop = () => {}
+const noop = () => {};
 
-export default function Link(_props: ParentProps<InertiaLinkProps> & ComponentProps<InertiaLinkProps['as']>) {
+export default function Link(
+  _props: ParentProps<InertiaLinkProps> & ComponentProps<InertiaLinkProps["as"]>
+) {
   let [props, attributes] = splitProps(_props, [
-    'children',
-    'as',
-    'data',
-    'href',
-    'method',
-    'preserveScroll',
-    'preserveState',
-    'replace',
-    'only',
-    'headers',
-    'queryStringArrayFormat',
-    'onClick',
-    'onCancelToken',
-    'onBefore',
-    'onStart',
-    'onProgress',
-    'onFinish',
-    'onCancel',
-    'onSuccess',
-    'onError',
-  ])
+    "children",
+    "as",
+    "data",
+    "href",
+    "method",
+    "preserveScroll",
+    "preserveState",
+    "replace",
+    "only",
+    "headers",
+    "queryStringArrayFormat",
+    "onClick",
+    "onCancelToken",
+    "onBefore",
+    "onStart",
+    "onProgress",
+    "onFinish",
+    "onCancel",
+    "onSuccess",
+    "onError",
+  ]);
 
   // Set default prop values
   props = mergeProps(
     {
-      as: 'a',
+      as: "a",
       data: {},
-      method: 'get',
+      method: "get",
       preserveScroll: false,
       preserveState: null,
       replace: false,
       only: [],
       headers: {},
-      queryStringArrayFormat: 'brackets',
+      queryStringArrayFormat: "brackets",
     },
-    props,
-  )
+    props
+  );
 
   // Mutate (once) props into prover values
   props = mergeProps(props, {
-    as: props.as.toLowerCase() as InertiaLinkProps['as'],
+    as: props.as.toLowerCase() as InertiaLinkProps["as"],
     method: props.method.toLowerCase() as Method,
-  })
+  });
 
   const [href, data] = mergeDataIntoQueryString(
     props.method,
-    props.href || '',
+    props.href || "",
     props.data,
-    props.queryStringArrayFormat,
-  )
+    props.queryStringArrayFormat
+  );
 
-  props = mergeProps(props, { data })
+  props = mergeProps(props, { data });
 
-  if (props.as === 'a') {
-    attributes = mergeProps(attributes, { href })
+  if (props.as === "a") {
+    attributes = mergeProps(attributes, { href });
 
-    if (props.method !== 'get') {
+    if (props.method !== "get") {
       console.warn(
-        `Creating POST/PUT/PATCH/DELETE <a> links is discouraged as it causes "Open Link in New Tab/Window" accessibility issues.\n\nPlease specify a more appropriate element using the "as" attribute. For example:\n\n<Link href="${href}" method="${props.method}" as="button">...</Link>`,
-      )
+        `Creating POST/PUT/PATCH/DELETE <a> links is discouraged as it causes "Open Link in New Tab/Window" accessibility issues.\n\nPlease specify a more appropriate element using the "as" attribute. For example:\n\n<Link href="${href}" method="${props.method}" as="button">...</Link>`
+      );
     }
   }
 
   const visit = (event: MouseEvent) => {
-    if (isServer) return
+    if (isServer) return;
 
-    props.onClick?.(event)
+    props.onClick?.(event);
 
-    // @ts-ignore
+    // @ts-expect-error
     if (shouldIntercept(event)) {
-      event.preventDefault()
+      event.preventDefault();
 
       router.visit(props.href, {
         data: props.data,
         method: props.method,
         preserveScroll: props.preserveScroll,
-        preserveState: props.preserveState ?? props.method === 'get',
+        preserveState: props.preserveState ?? props.method === "get",
         replace: props.replace,
         only: props.only,
         headers: props.headers,
@@ -124,21 +133,21 @@ export default function Link(_props: ParentProps<InertiaLinkProps> & ComponentPr
         onCancel: props.onCancel || noop,
         onSuccess: props.onSuccess || noop,
         onError: props.onError || noop,
-      })
+      });
     }
-  }
+  };
 
   return createComponent(
-    // @ts-ignore
+    // @ts-expect-error
     Dynamic,
     mergeProps(attributes, {
       get component() {
-        return props.as
+        return props.as;
       },
       get children() {
-        return props.children
+        return props.children;
       },
       onClick: visit,
-    }),
-  )
+    })
+  );
 }
