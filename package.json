@@ -2,7 +2,7 @@
   "name": "@auaust/inertia-adapter-solid",
   "license": "GPL-3.0-only",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publishConfig": {
     "access": "public"
   },
@@ -52,22 +52,22 @@
   "files": [
     "dist"
   ],
-  "main": "dist/index/index.common.js",
-  "module": "dist/index/index.module.js",
+  "main": "dist/index/index.cjs",
+  "module": "dist/index/index.mjs",
   "types": "dist/index/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index/index.d.ts",
-      "import": "./dist/index/index.module.js",
-      "node": "./dist/index/index.node.js",
-      "require": "./dist/index/index.common.js",
-      "solid": "./dist/index/index.jsx"
+      "solid": "./dist/index/index.js",
+      "import": "./dist/index/index.mjs",
+      "require": "./dist/index/index.cjs",
+      "node": "./dist/index/index.cjs"
     },
     "./server": {
       "types": "./dist/server/index.d.ts",
-      "import": "./dist/server/index.module.js",
-      "node": "./dist/server/index.node.js",
-      "require": "./dist/server/index.common.js"
+      "import": "./dist/server/index.mjs",
+      "require": "./dist/server/index.cjs",
+      "node": "./dist/server/index.cjs"
     }
   },
   "repository": {
