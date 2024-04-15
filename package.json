@@ -1,17 +1,24 @@
 {
-  "name": "inertia-adapter-solid",
+  "name": "@auaust/inertia-adapter-solid",
   "version": "0.2.0",
-  "license": "MIT",
-  "description": "The SolidJS adapter for Inertia.js",
+  "license": "GPL-3.0-only",
+  "description": "A better maintained fork of the SolidJS adapter for Inertia.js",
   "contributors": [
-    "Jorge González <yo@jorgeglz.io>"
+    {
+      "name": "Jorge González",
+      "email": "yo@jorgeglz.io"
+    },
+    {
+      "name": "AUAUST",
+      "email": "hello@auaust.ch"
+    }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/iksaku/inertia-adapter-solid.git"
+    "url": "https://github.com/AUAUST/lib-js-inertia-adapter-solid.git"
   },
   "bugs": {
-    "url": "https://github.com/iksaku/inertia-adapter-solid/issues"
+    "url": "https://github.com/AUAUST/lib-js-inertia-adapter-solid"
   },
   "files": [
     "dist"
