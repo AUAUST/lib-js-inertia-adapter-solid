@@ -33,17 +33,17 @@
   },
   "dependencies": {
     "@auaust/primitive-kit": "^0.28.5",
-    "@inertiajs/core": "^1.0.14"
+    "@inertiajs/core": "^1.0.15"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
     "@solidjs/meta": "^0.29.3",
-    "@types/node": "^20.11.19",
+    "@types/node": "^20.12.7",
     "rimraf": "^5.0.5",
     "rollup": "^4.14.3",
     "rollup-preset-solid": "^2.0.1",
-    "solid-js": "^1.8.0",
-    "typescript": "^5.3.3"
+    "solid-js": "^1.8.16",
+    "typescript": "^5.4.5"
   },
   "peerDependencies": {
     "@solidjs/meta": "^0.29.3",
