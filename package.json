@@ -24,19 +24,22 @@
     "dist"
   ],
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/types/index.d.ts",
+  "main": "dist/index/index.common.js",
+  "module": "dist/index/index.module.js",
+  "types": "dist/index/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.js"
+      "types": "./dist/index/index.d.ts",
+      "solid": "./dist/index/index.jsx",
+      "import": "./dist/index/index.module.js",
+      "require": "./dist/index/index.common.js",
+      "node": "./dist/index/index.node.js"
     },
     "./server": {
-      "types": "./dist/types/server.d.ts",
-      "import": "./dist/server.esm.js",
-      "require": "./dist/server.js"
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.module.js",
+      "require": "./dist/server/index.common.js",
+      "node": "./dist/server/index.node.js"
     }
   },
   "scripts": {
