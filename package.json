@@ -51,9 +51,8 @@
     "prepublish": "pnpm build"
   },
   "dependencies": {
-    "@inertiajs/core": "^1.0.14",
-    "lodash.clonedeep": "^4.5.0",
-    "lodash.isequal": "^4.5.0"
+    "@auaust/primitive-kit": "^0.28.5",
+    "@inertiajs/core": "^1.0.14"
   },
   "devDependencies": {
     "@solidjs/meta": "^0.29.3",
