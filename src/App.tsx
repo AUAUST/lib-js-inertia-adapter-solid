@@ -1,37 +1,45 @@
-import { Page, PageResolver, router } from '@inertiajs/core'
-import { MetaProvider } from '@solidjs/meta'
-import { Component, ParentComponent, ParentProps, createComponent, mergeProps } from 'solid-js'
-import { createStore, reconcile } from 'solid-js/store'
-import { isServer } from 'solid-js/web'
-import PageContext from './PageContext'
+import { router, type Page, type PageResolver } from "@inertiajs/core";
+import { MetaProvider } from "@solidjs/meta";
+import {
+  createComponent,
+  mergeProps,
+  type Component,
+  type ParentComponent,
+  type ParentProps,
+} from "solid-js";
+import { createStore, reconcile } from "solid-js/store";
+import { isServer } from "solid-js/web";
+import PageContext from "./PageContext";
 
 export type InertiaAppProps = {
-  initialPage: Page
-  initialComponent?: Component<Page['props']> & { layout?: ParentComponent<any> | ParentComponent<any>[] }
-  resolveComponent?: PageResolver
-}
+  initialPage: Page;
+  initialComponent?: Component<Page["props"]> & {
+    layout?: ParentComponent<any> | ParentComponent<any>[];
+  };
+  resolveComponent?: PageResolver;
+};
 
 type InertiaAppState = {
-  component: InertiaAppProps['initialComponent'] | null
-  layouts: ParentComponent<any>[]
-  page: InertiaAppProps['initialPage']
-  key: any
-}
+  component: InertiaAppProps["initialComponent"] | null;
+  layouts: ParentComponent<any>[];
+  page: InertiaAppProps["initialPage"];
+  key: any;
+};
 
 function extractLayouts(component) {
   if (!component) {
-    return []
+    return [];
   }
 
-  if (typeof component.layout === 'function') {
-    return [component.layout]
+  if (typeof component.layout === "function") {
+    return [component.layout];
   }
 
   if (Array.isArray(component.layout)) {
-    return component.layout
+    return component.layout;
   }
 
-  return []
+  return [];
 }
 
 export default function App(props: ParentProps<InertiaAppProps>) {
@@ -40,7 +48,7 @@ export default function App(props: ParentProps<InertiaAppProps>) {
     layouts: extractLayouts(props.initialComponent || null),
     page: props.initialPage,
     key: null,
-  })
+  });
 
   if (!isServer) {
     router.init({
@@ -53,14 +61,14 @@ export default function App(props: ParentProps<InertiaAppProps>) {
             layouts: extractLayouts(component),
             page,
             key: preserveState ? current.key : Date.now(),
-          }),
-        )
+          })
+        );
       },
-    })
+    });
   }
 
   const children = (i = 0) => {
-    const layout = current.layouts[i]
+    const layout = current.layouts[i];
 
     if (!layout) {
       return createComponent(
@@ -69,31 +77,31 @@ export default function App(props: ParentProps<InertiaAppProps>) {
           {
             key: current.key,
           },
-          () => current.page.props,
-        ),
-      )
+          () => current.page.props
+        )
+      );
     }
 
     return createComponent(
       layout,
       mergeProps(() => current.page.props, {
         get children() {
-          return children(i + 1)
+          return children(i + 1);
         },
-      }),
-    )
-  }
+      })
+    );
+  };
 
   return createComponent(MetaProvider, {
     get children() {
       return createComponent(PageContext.Provider, {
         get value() {
-          return current.page
+          return current.page;
         },
         get children() {
-          return children()
+          return children();
         },
-      })
+      });
     },
-  })
+  });
 }

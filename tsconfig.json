@@ -12,5 +12,5 @@
     "declaration": true,
     "declarationDir": "dist/types"
   },
-  "include": ["src/index.ts", "src/server.ts"]
+  "include": ["src/index.tsx", "src/server.tsx"]
 }

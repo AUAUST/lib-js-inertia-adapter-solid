@@ -40,8 +40,11 @@
     }
   },
   "scripts": {
-    "dev": "./build.js --watch",
-    "build": "rm -rf dist && ./build.js && tsc --emitDeclarationOnly",
+    "dev": "pnpm build:clean && pnpm dev:js",
+    "dev:js": "rollup -c rollup.config.js -w",
+    "build": "pnpm build:clean && pnpm build:js",
+    "build:clean": "rimraf dist",
+    "build:js": "rollup -c rollup.config.js",
     "prepublish": "pnpm build"
   },
   "dependencies": {
@@ -52,10 +55,9 @@
   "devDependencies": {
     "@solidjs/meta": "^0.29.3",
     "@types/node": "^20.11.19",
-    "esbuild": "^0.20.0",
-    "esbuild-node-externals": "^1.13.0",
-    "prettier": "^3.2.5",
-    "prettier-plugin-organize-imports": "^3.2.4",
+    "rimraf": "^5.0.5",
+    "rollup": "^4.14.3",
+    "rollup-preset-solid": "^2.0.1",
     "solid-js": "^1.8.0",
     "typescript": "^5.3.3"
   },
