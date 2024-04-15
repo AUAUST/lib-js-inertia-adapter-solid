@@ -1,4 +1,5 @@
-import { clone, equals } from "@auaust/primitive-kit/objects";
+import { clone, equals, keys } from "@auaust/primitive-kit/objects";
+import { isString } from "@auaust/primitive-kit/strings";
 import {
   router,
   type GlobalEventsMap,
@@ -67,7 +68,7 @@ interface InertiaFormProps<TForm extends FormState> {
 }
 
 function createRememberStore<TValue extends object>(
-  value: TValue,
+  value: TValue | undefined,
   key: string | undefined,
   keySuffix: string
 ): ReturnType<typeof createStore<TValue>> {
@@ -108,13 +109,12 @@ export function useForm<TForm extends FormState>(
   rememberKeyOrInitialValues?: string | TForm,
   maybeInitialValues?: TForm
 ): InertiaForm<TForm> {
-  const rememberKey =
-    typeof rememberKeyOrInitialValues === "string"
-      ? rememberKeyOrInitialValues
-      : undefined;
+  const rememberKey = isString(rememberKeyOrInitialValues)
+    ? rememberKeyOrInitialValues
+    : undefined;
 
-  const [defaults, setDefaults] = createSignal<TForm>(
-    typeof rememberKeyOrInitialValues === "string"
+  const [defaults, setDefaults] = createSignal<TForm | undefined>(
+    isString(rememberKeyOrInitialValues)
       ? maybeInitialValues
       : rememberKeyOrInitialValues
   );
@@ -126,10 +126,10 @@ export function useForm<TForm extends FormState>(
   );
   const dataMemo = createMemo(() =>
     unwrap(
-      Object.keys(defaults()).reduce((carry, key) => {
-        carry[key] = data[key];
-        return carry;
-      }, {}) as TForm
+      keys(defaults()).reduce<TForm>((acc, key) => {
+        (acc as any)[key] = data[key];
+        return acc;
+      }, {} as TForm)
     )
   );
   const isDirty = createMemo<boolean>(() => !equals(dataMemo(), defaults()));
