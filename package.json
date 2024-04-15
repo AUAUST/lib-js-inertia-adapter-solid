@@ -1,8 +1,13 @@
 {
   "name": "@auaust/inertia-adapter-solid",
-  "version": "0.2.0",
   "license": "GPL-3.0-only",
+  "type": "module",
+  "version": "0.2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "A better maintained fork of the SolidJS adapter for Inertia.js",
+  "packageManager": "pnpm@8.15.4",
   "contributors": [
     {
       "name": "Jorge González",
@@ -13,42 +18,18 @@
       "email": "hello@auaust.ch"
     }
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/AUAUST/lib-js-inertia-adapter-solid.git"
-  },
-  "bugs": {
-    "url": "https://github.com/AUAUST/lib-js-inertia-adapter-solid"
-  },
-  "files": [
-    "dist"
-  ],
-  "type": "module",
-  "main": "dist/index/index.common.js",
-  "module": "dist/index/index.module.js",
-  "types": "dist/index/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index/index.d.ts",
-      "solid": "./dist/index/index.jsx",
-      "import": "./dist/index/index.module.js",
-      "require": "./dist/index/index.common.js",
-      "node": "./dist/index/index.node.js"
-    },
-    "./server": {
-      "types": "./dist/server/index.d.ts",
-      "import": "./dist/server/index.module.js",
-      "require": "./dist/server/index.common.js",
-      "node": "./dist/server/index.node.js"
-    }
-  },
   "scripts": {
-    "dev": "pnpm build:clean && pnpm dev:js",
-    "dev:js": "rollup -c rollup.config.js -w",
+    "preinstall": "npx only-allow pnpm",
     "build": "pnpm build:clean && pnpm build:js",
     "build:clean": "rimraf dist",
     "build:js": "rollup -c rollup.config.js",
-    "prepublish": "pnpm build"
+    "dev": "pnpm build:clean && pnpm dev:js",
+    "dev:js": "rollup -c rollup.config.js -w",
+    "typecheck": "echo 'Typechecking...' && tsc --noEmit && echo 'All good!'",
+    "ci:publish": "changeset publish"
+  },
+  "bugs": {
+    "url": "https://github.com/AUAUST/lib-js-inertia-adapter-solid"
   },
   "dependencies": {
     "@auaust/primitive-kit": "^0.28.5",
@@ -66,5 +47,30 @@
   "peerDependencies": {
     "@solidjs/meta": "^0.29.3",
     "solid-js": "^1.8.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index/index.common.js",
+  "module": "dist/index/index.module.js",
+  "types": "dist/index/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index/index.d.ts",
+      "import": "./dist/index/index.module.js",
+      "node": "./dist/index/index.node.js",
+      "require": "./dist/index/index.common.js",
+      "solid": "./dist/index/index.jsx"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.module.js",
+      "node": "./dist/server/index.node.js",
+      "require": "./dist/server/index.common.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AUAUST/lib-js-inertia-adapter-solid.git"
   }
 }
