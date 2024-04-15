@@ -1,8 +1,6 @@
 import { router, type Page, type PageResolver } from "@inertiajs/core";
 import { MetaProvider } from "@solidjs/meta";
 import {
-  createComponent,
-  mergeProps,
   type Component,
   type ParentComponent,
   type ParentProps,
@@ -68,40 +66,20 @@ export default function App(props: ParentProps<InertiaAppProps>) {
   }
 
   const children = (i = 0) => {
-    const layout = current.layouts[i];
+    const Layout = current.layouts[i];
 
-    if (!layout) {
-      return createComponent(
-        current.component,
-        mergeProps(
-          {
-            key: current.key,
-          },
-          () => current.page.props
-        )
-      );
+    if (!Layout) {
+      return <current.component key={current.key} {...current.page.props} />;
     }
 
-    return createComponent(
-      layout,
-      mergeProps(() => current.page.props, {
-        get children() {
-          return children(i + 1);
-        },
-      })
-    );
+    return <Layout {...current.page.props}>{children(i + 1)}</Layout>;
   };
 
-  return createComponent(MetaProvider, {
-    get children() {
-      return createComponent(PageContext.Provider, {
-        get value() {
-          return current.page;
-        },
-        get children() {
-          return children();
-        },
-      });
-    },
-  });
+  return (
+    <MetaProvider>
+      <PageContext.Provider value={current.page}>
+        {children()}
+      </PageContext.Provider>
+    </MetaProvider>
+  );
 }

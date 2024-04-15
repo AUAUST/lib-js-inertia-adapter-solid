@@ -8,7 +8,6 @@ import {
   type Progress,
 } from "@inertiajs/core";
 import {
-  createComponent,
   mergeProps,
   splitProps,
   type ComponentProps,
@@ -137,17 +136,9 @@ export default function Link(
     }
   };
 
-  return createComponent(
-    // @ts-expect-error
-    Dynamic,
-    mergeProps(attributes, {
-      get component() {
-        return props.as;
-      },
-      get children() {
-        return props.children;
-      },
-      onClick: visit,
-    })
+  return (
+    <Dynamic {...attributes} component={props.as} onClick={visit}>
+      {props.children}
+    </Dynamic>
   );
 }
