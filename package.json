@@ -2,7 +2,7 @@
   "name": "@auaust/inertia-adapter-solid",
   "license": "GPL-3.0-only",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publishConfig": {
     "access": "public"
   },
