@@ -1,3 +1,4 @@
+import { A, F } from "@auaust/primitive-kit";
 import { router, type Page, type PageResolver } from "@inertiajs/core";
 import { MetaProvider } from "@solidjs/meta";
 import {
@@ -5,14 +6,15 @@ import {
   type ParentComponent,
   type ParentProps,
 } from "solid-js";
-import { createStore, reconcile } from "solid-js/store";
+import { SetStoreFunction, createStore, reconcile } from "solid-js/store";
 import { isServer } from "solid-js/web";
-import { PageContext } from "./PageContext";
+import { PageContext } from "./usePage";
+import { PropsContext } from "./useProps";
 
 export type InertiaAppProps = {
   initialPage: Page;
   initialComponent?: Component<Page["props"]> & {
-    layout?: ParentComponent<any> | ParentComponent<any>[];
+    layout?: ParentComponent<Page> | ParentComponent<Page>[];
   };
   resolveComponent?: PageResolver;
 };
@@ -24,18 +26,13 @@ type InertiaAppState = {
   key: any;
 };
 
-function extractLayouts(component) {
-  if (!component) {
-    return [];
-  }
+function extractLayouts(component: unknown) {
+  const layout = (component as any).layout;
 
-  if (typeof component.layout === "function") {
-    return [component.layout];
-  }
+  if (!layout) return [];
 
-  if (Array.isArray(component.layout)) {
-    return component.layout;
-  }
+  if (F.is(layout)) return [layout];
+  if (A.is(layout)) return layout;
 
   return [];
 }
@@ -68,18 +65,24 @@ export function App(props: ParentProps<InertiaAppProps>) {
   const children = (i = 0) => {
     const Layout = current.layouts[i];
 
-    if (!Layout) {
+    // When there is no more wrapper layout, render the component
+    if (!Layout)
       return <current.component key={current.key} {...current.page.props} />;
-    }
 
-    return <Layout {...current.page.props}>{children(i + 1)}</Layout>;
+    return <Layout {...current.page}>{children(i + 1)}</Layout>;
   };
+
+  const updateProps: SetStoreFunction<Page["props"]> = (...args: any[]) =>
+    // @ts-expect-error
+    setCurrent("page", "props", ...args);
 
   return (
     <MetaProvider>
-      <PageContext.Provider value={current.page}>
-        {children()}
-      </PageContext.Provider>
+      <PropsContext.Provider value={[current.page.props, updateProps]}>
+        <PageContext.Provider value={current.page}>
+          {children()}
+        </PageContext.Provider>
+      </PropsContext.Provider>
     </MetaProvider>
   );
 }

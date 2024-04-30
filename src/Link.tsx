@@ -102,7 +102,7 @@ export function Link(
 
     if (props.method !== "get") {
       console.warn(
-        `Creating POST/PUT/PATCH/DELETE <a> links is discouraged as it causes "Open Link in New Tab/Window" accessibility issues.\n\nPlease specify a more appropriate element using the "as" attribute. For example:\n\n<Link href="${href}" method="${props.method}" as="button">...</Link>`
+        `Creating POST/PUT/PATCH/DELETE <a> links is discouraged as it causes "Open Link in New Tab/Window" accessibility issues. Use 'as="button"' instead.`
       );
     }
   }
