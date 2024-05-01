@@ -6,10 +6,9 @@ import {
   type ParentComponent,
   type ParentProps,
 } from "solid-js";
-import { SetStoreFunction, createStore, reconcile } from "solid-js/store";
+import { createMutable, createStore, reconcile } from "solid-js/store";
 import { isServer } from "solid-js/web";
 import { PageContext } from "./usePage";
-import { PropsContext } from "./useProps";
 
 export type InertiaAppProps = {
   initialPage: Page;
@@ -38,10 +37,16 @@ function extractLayouts(component: unknown) {
 }
 
 export function App(props: ParentProps<InertiaAppProps>) {
+  const currentProps = createMutable<InertiaAppState["page"]["props"]>(
+    props.initialPage.props
+  );
   const [current, setCurrent] = createStore<InertiaAppState>({
     component: props.initialComponent || null,
     layouts: extractLayouts(props.initialComponent || null),
-    page: props.initialPage,
+    page: {
+      ...props.initialPage,
+      props: currentProps,
+    },
     key: null,
   });
 
@@ -54,7 +59,7 @@ export function App(props: ParentProps<InertiaAppProps>) {
           reconcile({
             component: component as Component,
             layouts: extractLayouts(component),
-            page,
+            page, // the inner props mutable is correctly updated by `reconcile`
             key: preserveState ? current.key : Date.now(),
           })
         );
@@ -72,17 +77,11 @@ export function App(props: ParentProps<InertiaAppProps>) {
     return <Layout {...current.page}>{children(i + 1)}</Layout>;
   };
 
-  const updateProps: SetStoreFunction<Page["props"]> = (...args: any[]) =>
-    // @ts-expect-error
-    setCurrent("page", "props", ...args);
-
   return (
     <MetaProvider>
-      <PropsContext.Provider value={[current.page.props, updateProps]}>
-        <PageContext.Provider value={current.page}>
-          {children()}
-        </PageContext.Provider>
-      </PropsContext.Provider>
+      <PageContext.Provider value={current.page}>
+        {children()}
+      </PageContext.Provider>
     </MetaProvider>
   );
 }

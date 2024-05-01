@@ -42,18 +42,18 @@ To accomplish this, we'll initialize SolidJS with
 the base Inertia component.
 
 ```jsx
-import { createInertiaApp } from 'inertia-adapter-solid'
-import { render } from 'solid-js/web'
+import { createInertiaApp } from "inertia-adapter-solid";
+import { render } from "solid-js/web";
 
 createInertiaApp({
   resolve(name) {
-    const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true })
-    return pages[`./Pages/${name}.jsx`]
+    const pages = import.meta.glob("./Pages/**/*.jsx", { eager: true });
+    return pages[`./Pages/${name}.jsx`];
   },
   setup({ el, App, props }) {
-    render(() => <App {...props} />, el)
+    render(() => <App {...props} />, el);
   },
-})
+});
 ```
 
 ### Defining a root element
@@ -64,9 +64,9 @@ can provide it using the `id` property.
 
 ```js
 createInertiaApp({
-  id: 'my-app',
+  id: "my-app",
   // ...
-})
+});
 ```
 
 ### Code splitting
@@ -110,7 +110,7 @@ of your pages can extend. You may have noticed in our example above that we're w
 the page content within a `<Layout>` component. Here's an example of such component:
 
 ```jsx
-import { Link } from 'inertia-adapter-solid'
+import { Link } from "inertia-adapter-solid";
 
 export default function Layout(props) {
   return (
@@ -122,7 +122,7 @@ export default function Layout(props) {
       </header>
       <article>{props.children}</article>
     </main>
-  )
+  );
 }
 ```
 
@@ -207,6 +207,37 @@ Welcome.layout = (props) => {
 }
 ```
 
+## Props
+
+### Updating props
+
+The page props are a [Solid mutable](https://primitives.solidjs.community/package/mutable). This means they are settable in a reactive way.
+
+```jsx
+function Welcome(props) {
+  return (
+    <>
+      Hello, {props.user.name}
+      <button onClick={() => (props.user.name = "John Doe")}>
+        Change name
+      </button>
+    </>
+  );
+}
+```
+
+It is best avoided to mutate the props directly from the frontend, but is sometimes useful when server endpoints are fetched to get additional data or update a specific part of the props, where using the `only` option isn't enough.
+Uses cases for this could be:
+
+- When paginating through a list of items. You can make a get request, and manually append the new items to the existing props.
+- Modifying a simple state, i.e. a wishlist/liked boolean on a product. Instead of returning the whole page again, the endpoint can return the new status of the product, and you can update the props directly.
+
+Using a mutable rather than a store allows for direct assignment of the new value, instead of being forced to know the fully qualified path of the value you want to update along with the store setter function.
+
+### Updated props persistence
+
+Frontend updated props are persisted in the history only. This means you can update the props, move away and return to the same page and the state will be the same as when you left. However, it won't persist a page reload. This is mostly aimed to allow for optimistic updates, i.e. updating a prop knowing that the backend will persist the change or manually updating a specific part of the props based on the returned data from an endpoint.
+
 ## Title & Metadata
 
 This adapter brings compatibility to Meta-tags using [`@solidjs/meta`](https://github.com/solidjs/solid-meta)
@@ -250,18 +281,18 @@ This file is going to look very similar to your `resources/js/app.js` file, exce
 going to run in the browser, but rather in Node.js. Here's a complete example.
 
 ```jsx
-import { createInertiaApp } from 'inertia-adapter-solid'
-import createServer from 'inertia-adapter-solid/server'
+import { createInertiaApp } from "inertia-adapter-solid";
+import createServer from "inertia-adapter-solid/server";
 
 createServer((page) =>
   createInertiaApp({
     page,
     resolve(name) {
-      const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true })
-      return pages[`./Pages/${name}.jsx`]
+      const pages = import.meta.glob("./Pages/**/*.jsx", { eager: true });
+      return pages[`./Pages/${name}.jsx`];
     },
-  }),
-)
+  })
+);
 ```
 
 ## Client-side Hydration
