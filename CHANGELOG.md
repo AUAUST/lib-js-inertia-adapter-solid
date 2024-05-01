@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.3.0
+
+### Minor Changes
+
+- c8e1e1e: `useProps` hook that allows frontend editting of components
+
 ## 0.2.3
 
 ### Patch Changes
