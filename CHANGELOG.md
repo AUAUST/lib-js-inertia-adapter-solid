@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.0
+
+### Minor Changes
+
+- 6cc233b: Dropped support for `useProps()`, made props writable
+
 ## 0.3.0
 
 ### Minor Changes
