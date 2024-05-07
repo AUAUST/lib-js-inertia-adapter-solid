@@ -286,7 +286,7 @@ export function useForm<TForm extends FormState>(
         },
         onBefore(visit) {
           batch(() => {
-            setWasSuccessful(true);
+            setWasSuccessful(false);
             setRecentlySuccessful(false);
           });
           clearTimeout(recentlySuccessfulTimeoutId);
