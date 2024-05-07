@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.1
+
+### Patch Changes
+
+- 1d0ffc3: Fix `wasSuccessful` always being true
+
 ## 0.4.0
 
 ### Minor Changes
