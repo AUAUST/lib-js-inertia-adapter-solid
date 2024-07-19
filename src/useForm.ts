@@ -1,3 +1,4 @@
+import { call } from "@auaust/primitive-kit/functions";
 import { clone, equals, keys } from "@auaust/primitive-kit/objects";
 import { isString } from "@auaust/primitive-kit/strings";
 import {
@@ -23,47 +24,30 @@ type FormErrors<TForm extends FormState> = Partial<Record<keyof TForm, string>>;
 
 interface InertiaFormProps<TForm extends FormState> {
   get isDirty(): boolean;
-
   defaults(): this;
-
   defaults(field: keyof TForm, value: unknown): this;
-
   defaults(fields: TForm): this;
-
   reset(...fields: string[]): this;
 
   transform(callback: (data: TForm) => RequestPayload): this;
 
   get errors(): FormErrors<TForm>;
-
   get hasErrors(): boolean;
-
   setError(field: keyof TForm, value: string): this;
-
   setError(fields: Record<keyof TForm, string>): this;
-
   clearErrors(...fields: string[]): this;
 
   get processing(): boolean;
-
   get progress(): GlobalEventsMap["progress"]["parameters"][0];
-
   get wasSuccessful(): boolean;
-
   get recentlySuccessful(): boolean;
 
   get(url: string, options?: Partial<VisitOptions>): void;
-
   post(url: string, options?: Partial<VisitOptions>): void;
-
   put(url: string, options?: Partial<VisitOptions>): void;
-
   patch(url: string, options?: Partial<VisitOptions>): void;
-
   delete(url: string, options?: Partial<VisitOptions>): void;
-
   submit(method: Method, url: string, options: Partial<VisitOptions>): void;
-
   cancel(): void;
 }
 
@@ -113,43 +97,42 @@ export function useForm<TForm extends FormState>(
     ? rememberKeyOrInitialValues
     : undefined;
 
-  const [defaults, setDefaults] = createSignal<TForm | undefined>(
-    isString(rememberKeyOrInitialValues)
-      ? maybeInitialValues
-      : rememberKeyOrInitialValues
-  );
+  let cancelToken = null,
+    recentlySuccessfulTimeout = null,
+    transform: (data: TForm) => RequestPayload = (data) =>
+      data as RequestPayload;
 
-  const [data, setData] = createRememberStore<TForm>(
-    clone(defaults()),
-    rememberKey,
-    "data"
-  );
+  const [defaults, setDefaults] = createSignal<TForm | undefined>(
+      isString(rememberKeyOrInitialValues)
+        ? maybeInitialValues
+        : rememberKeyOrInitialValues
+    ),
+    [data, setData] = createRememberStore<TForm>(
+      clone(defaults()),
+      rememberKey,
+      "data"
+    );
+
   const dataMemo = createMemo(() =>
-    unwrap(
-      keys(defaults()).reduce<TForm>((acc, key) => {
-        (acc as any)[key] = data[key];
-        return acc;
-      }, {} as TForm)
-    )
-  );
-  const isDirty = createMemo<boolean>(() => !equals(dataMemo(), defaults()));
+      unwrap(
+        keys(defaults()).reduce<TForm>((acc, key) => {
+          (acc as any)[key] = data[key];
+          return acc;
+        }, {} as TForm)
+      )
+    ),
+    isDirty = createMemo(() => !equals(dataMemo(), defaults()));
 
   const [errors, setErrors] = rememberKey
-    ? useRemember<FormErrors<TForm>>({}, `${rememberKey}:errors`)
-    : createSignal<FormErrors<TForm>>({});
-  const hasErrors = createMemo<boolean>(() => Object.keys(errors()).length > 0);
+      ? useRemember<FormErrors<TForm>>({}, `${rememberKey}:errors`)
+      : createSignal<FormErrors<TForm>>({}),
+    hasErrors = createMemo(() => Object.keys(errors()).length > 0);
 
-  let cancelToken = null;
-  let recentlySuccessfulTimeoutId = null;
-  // @ts-expect-error
-  let transform: (data: TForm) => RequestPayload = (data) => data;
-
-  const [processing, setProcessing] = createSignal<boolean>(false);
-  const [progress, setProgress] =
-    createSignal<GlobalEventsMap["progress"]["parameters"][0]>(undefined);
-  const [wasSuccessful, setWasSuccessful] = createSignal<boolean>(false);
-  const [recentlySuccessful, setRecentlySuccessful] =
-    createSignal<boolean>(false);
+  const [processing, setProcessing] = createSignal<boolean>(false),
+    [progress, setProgress] =
+      createSignal<GlobalEventsMap["progress"]["parameters"][0]>(undefined),
+    [wasSuccessful, setWasSuccessful] = createSignal<boolean>(false),
+    [recentlySuccessful, setRecentlySuccessful] = createSignal<boolean>(false);
 
   const store = {
     get isDirty() {
@@ -166,12 +149,14 @@ export function useForm<TForm extends FormState>(
         return this;
       }
 
-      if (typeof fieldOrFields === "string") {
-        // @ts-expect-error
-        fieldOrFields = { [fieldOrFields]: maybeValue };
+      if (isString(fieldOrFields)) {
+        fieldOrFields = { [fieldOrFields]: maybeValue } as Record<
+          keyof TForm,
+          unknown
+        >;
       }
 
-      // setDefaults((defaults) => Object.assign(defaults, fieldOrFields))
+      setDefaults((defaults) => Object.assign(defaults, fieldOrFields));
 
       return this;
     },
@@ -254,116 +239,99 @@ export function useForm<TForm extends FormState>(
       return recentlySuccessful();
     },
 
-    get(url: string, options: Partial<VisitOptions> = {}) {
+    get(url: string, options?: Partial<VisitOptions>) {
       this.submit("get", url, options);
     },
-    post(url: string, options: Partial<VisitOptions> = {}) {
+    post(url: string, options?: Partial<VisitOptions>) {
       this.submit("post", url, options);
     },
-    put(url: string, options: Partial<VisitOptions> = {}) {
+    put(url: string, options?: Partial<VisitOptions>) {
       this.submit("put", url, options);
     },
-    patch(url: string, options: Partial<VisitOptions> = {}) {
+    patch(url: string, options?: Partial<VisitOptions>) {
       this.submit("patch", url, options);
     },
-    delete(url: string, options: Partial<VisitOptions> = {}) {
+    delete(url: string, options?: Partial<VisitOptions>) {
       this.submit("delete", url, options);
     },
     submit(method: Method, url: string, options: Partial<VisitOptions> = {}) {
       if (isServer) return;
 
-      const store = this;
+      const store = this,
+        data = transform(dataMemo()),
+        _options: VisitOptions = {
+          ...options,
+          onCancelToken(token) {
+            cancelToken = token;
 
-      const data = transform(dataMemo());
-      const _options = {
-        ...options,
-        onCancelToken(token) {
-          cancelToken = token;
+            return call(options.onCancelToken, undefined, token);
+          },
+          onBefore(visit) {
+            batch(() => {
+              setWasSuccessful(false);
+              setRecentlySuccessful(false);
+            });
+            clearTimeout(recentlySuccessfulTimeout);
 
-          if (options.onCancelToken) {
-            return options.onCancelToken(token);
-          }
-        },
-        onBefore(visit) {
-          batch(() => {
-            setWasSuccessful(false);
-            setRecentlySuccessful(false);
-          });
-          clearTimeout(recentlySuccessfulTimeoutId);
+            return call(options.onBefore, undefined, visit);
+          },
+          onStart(visit) {
+            setProcessing(true);
 
-          if (options.onBefore) {
-            return options.onBefore(visit);
-          }
-        },
-        onStart(visit) {
-          setProcessing(true);
+            return call(options.onStart, undefined, visit);
+          },
+          onProgress(event) {
+            setProgress(event);
 
-          if (options.onStart) {
-            return options.onStart(visit);
-          }
-        },
-        onProgress(event) {
-          setProgress(event);
+            return call(options.onProgress, undefined, event);
+          },
+          onSuccess(page) {
+            batch(() => {
+              setProcessing(false);
+              setProgress(undefined);
+              setWasSuccessful(true);
+              setRecentlySuccessful(true);
 
-          if (options.onProgress) {
-            return options.onProgress(event);
-          }
-        },
-        async onSuccess(page) {
-          batch(() => {
-            setProcessing(false);
-            setProgress(undefined);
-            setWasSuccessful(true);
-            setRecentlySuccessful(true);
+              store.clearErrors();
+            });
 
-            store.clearErrors();
-          });
+            recentlySuccessfulTimeout = setTimeout(
+              () => setRecentlySuccessful(false),
+              2000
+            );
 
-          recentlySuccessfulTimeoutId = setTimeout(
-            () => setRecentlySuccessful(false),
-            2000
-          );
+            // setDefaults(() => dataMemo())
 
-          // setDefaults(() => dataMemo())
+            return call(options.onSuccess, undefined, page);
+          },
+          onError(errors) {
+            batch(() => {
+              setProcessing(false);
+              setProgress(undefined);
 
-          if (options.onSuccess) {
-            return await options.onSuccess(page);
-          }
-        },
-        onError(errors) {
-          batch(() => {
-            setProcessing(false);
-            setProgress(undefined);
+              store.clearErrors().setError(errors);
+            });
 
-            store.clearErrors().setError(errors);
-          });
+            return call(options.onError, undefined, errors);
+          },
+          onCancel() {
+            batch(() => {
+              setProcessing(false);
+              setProgress(undefined);
+            });
 
-          if (options.onError) {
-            return options.onError(errors);
-          }
-        },
-        onCancel() {
-          batch(() => {
-            setProcessing(false);
-            setProgress(undefined);
-          });
+            return call(options.onCancel);
+          },
+          onFinish(visit) {
+            batch(() => {
+              setProcessing(false);
+              setProgress(undefined);
+            });
+            cancelToken = null;
 
-          if (options.onCancel) {
-            return options.onCancel();
-          }
-        },
-        onFinish(visit) {
-          batch(() => {
-            setProcessing(false);
-            setProgress(undefined);
-          });
-          cancelToken = null;
-
-          if (options.onFinish) {
-            return options.onFinish(visit);
-          }
-        },
-      };
+            return call(options.onFinish, undefined, visit);
+          },
+        };
 
       if (method === "delete") {
         router.delete(url, { ..._options, data });
@@ -373,9 +341,7 @@ export function useForm<TForm extends FormState>(
     },
 
     cancel() {
-      if (cancelToken) {
-        cancelToken.cancel();
-      }
+      cancelToken && cancelToken.cancel();
     },
   };
 
