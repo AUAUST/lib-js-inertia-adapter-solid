@@ -1,5 +1,12 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.2
+
+### Patch Changes
+
+- cbec6a2: Updated dependencies
+- d29e32b: useForm's internal code cleanup
+
 ## 0.4.1
 
 ### Patch Changes
