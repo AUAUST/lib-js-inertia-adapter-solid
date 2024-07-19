@@ -17,8 +17,9 @@ jobs:
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # with:
+        #   Uses package.json's packageManager field to determine the version
+        #   version: 9
 
       - name: Use Node.js 21.x
         uses: actions/setup-node@v4
