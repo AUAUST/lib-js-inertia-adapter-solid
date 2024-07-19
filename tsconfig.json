@@ -6,7 +6,8 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "types": ["node"],
-    "declaration": false
+    "declaration": false,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"]
 }
