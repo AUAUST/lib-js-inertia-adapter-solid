@@ -41,9 +41,9 @@ type InertiaLinkProps = {
 const noop = () => {};
 
 export function Link(
-  _props: ParentProps<InertiaLinkProps> & ComponentProps<InertiaLinkProps["as"]>
+  props: ParentProps<InertiaLinkProps> & ComponentProps<InertiaLinkProps["as"]>
 ) {
-  let [props, attributes] = splitProps(_props, [
+  let [local, attributes] = splitProps(props, [
     "children",
     "as",
     "data",
@@ -64,10 +64,13 @@ export function Link(
     "onCancel",
     "onSuccess",
     "onError",
+    "async",
+    "cacheFor",
+    "prefetch",
   ]);
 
   // Set default prop values
-  props = mergeProps(
+  local = mergeProps(
     {
       as: "a",
       data: {},
@@ -78,29 +81,32 @@ export function Link(
       only: [],
       headers: {},
       queryStringArrayFormat: "brackets",
+      async: false,
+      cacheFor: 0,
+      prefetch: false,
     },
-    props
+    local
   );
 
   // Mutate (once) props into prover values
-  props = mergeProps(props, {
-    as: props.as.toLowerCase() as InertiaLinkProps["as"],
-    method: props.method.toLowerCase() as Method,
+  local = mergeProps(local, {
+    as: local.as.toLowerCase() as InertiaLinkProps["as"],
+    method: local.method.toLowerCase() as Method,
   });
 
   const [href, data] = mergeDataIntoQueryString(
-    props.method,
-    props.href || "",
-    props.data,
-    props.queryStringArrayFormat
+    local.method,
+    local.href || "",
+    local.data,
+    local.queryStringArrayFormat
   );
 
-  props = mergeProps(props, { data });
+  local = mergeProps(local, { data });
 
-  if (props.as === "a") {
+  if (local.as === "a") {
     attributes = mergeProps(attributes, { href });
 
-    if (props.method !== "get") {
+    if (local.method !== "get") {
       console.warn(
         `Creating POST/PUT/PATCH/DELETE <a> links is discouraged as it causes "Open Link in New Tab/Window" accessibility issues. Use 'as="button"' instead.`
       );
@@ -110,35 +116,38 @@ export function Link(
   const visit = (event: MouseEvent) => {
     if (isServer) return;
 
-    props.onClick?.(event);
+    local.onClick?.(event);
 
     // @ts-expect-error
     if (shouldIntercept(event)) {
       event.preventDefault();
 
-      router.visit(props.href, {
-        data: props.data,
-        method: props.method,
-        preserveScroll: props.preserveScroll,
-        preserveState: props.preserveState ?? props.method === "get",
-        replace: props.replace,
-        only: props.only,
-        headers: props.headers,
-        onCancelToken: props.onCancelToken || noop,
-        onBefore: props.onBefore || noop,
-        onStart: props.onStart || noop,
-        onProgress: props.onProgress || noop,
-        onFinish: props.onFinish || noop,
-        onCancel: props.onCancel || noop,
-        onSuccess: props.onSuccess || noop,
-        onError: props.onError || noop,
+      router.visit(local.href, {
+        data: local.data,
+        method: local.method,
+        preserveScroll: local.preserveScroll,
+        preserveState: local.preserveState ?? local.method === "get",
+        replace: local.replace,
+        only: local.only,
+        headers: local.headers,
+        onCancelToken: local.onCancelToken || noop,
+        onBefore: local.onBefore || noop,
+        onStart: local.onStart || noop,
+        onProgress: local.onProgress || noop,
+        onFinish: local.onFinish || noop,
+        onCancel: local.onCancel || noop,
+        onSuccess: local.onSuccess || noop,
+        onError: local.onError || noop,
       });
     }
   };
 
   return (
-    <Dynamic {...attributes} component={props.as} onClick={visit}>
-      {props.children}
-    </Dynamic>
+    <Dynamic
+      {...attributes}
+      component={local.as}
+      onClick={visit}
+      children={local.children}
+    />
   );
 }
