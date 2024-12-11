@@ -28,7 +28,7 @@
     "build:clean": "rimraf dist",
     "build:js": "tsup",
     "dev": "pnpm build:clean && pnpm dev:js",
-    "dev:js": "vite serve dev",
+    "dev:js": "tsup --watch",
     "typecheck": "echo 'Typechecking...' && tsc --noEmit && echo 'All good!'",
     "ci:publish": "changeset publish"
   },
