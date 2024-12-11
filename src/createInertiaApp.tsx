@@ -82,9 +82,9 @@ export async function createInertiaApp({
     ));
 
     return { head, body };
+  } else if (progress) {
+    setupProgress(progress);
   }
-
-  !isServer && progress && setupProgress(progress);
 
   F.call(setup, null, { el, App, props });
 }

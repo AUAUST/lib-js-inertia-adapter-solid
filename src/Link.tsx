@@ -9,13 +9,13 @@ import {
   type Progress,
 } from "@inertiajs/core";
 import {
+  createMemo,
   mergeProps,
   splitProps,
-  type ComponentProps,
   type JSX,
   type ParentProps,
 } from "solid-js";
-import { Dynamic, isServer } from "solid-js/web";
+import { Dynamic } from "solid-js/web";
 
 type InertiaLinkProps = {
   as?: keyof JSX.IntrinsicElements;
@@ -39,13 +39,12 @@ type InertiaLinkProps = {
   onError?: () => void;
 };
 
-const noop = () => {};
+const noop = () => undefined;
 
 export function Link(
-  props: ParentProps<InertiaLinkProps> &
-    ComponentProps<NonNullable<InertiaLinkProps["as"]>>
+  props: ParentProps<InertiaLinkProps> & JSX.HTMLAttributes<HTMLAnchorElement>
 ) {
-  let [local, attributes] = splitProps(props, [
+  const [local, attributes] = splitProps(props, [
     "children",
     "as",
     "data",
@@ -68,68 +67,55 @@ export function Link(
     "onError",
   ]);
 
-  // Set default prop values
-  local = mergeProps(
+  const defaulted = mergeProps(
     {
       as: "a" as const,
-      data: {},
       method: "get" as const,
+      data: {},
       preserveScroll: false,
       replace: false,
       only: [],
       headers: {},
       queryStringArrayFormat: "brackets" as const,
-      async: false,
-      cacheFor: 0,
-      prefetch: false,
+      onClick: noop,
+      onCancelToken: noop,
+      onBefore: noop,
+      onStart: noop,
+      onProgress: noop,
+      onFinish: noop,
+      onCancel: noop,
+      onSuccess: noop,
+      onError: noop,
     },
     local
   );
 
-  const [href, data] = mergeDataIntoQueryString(
-    S.lower(local.method) || "get",
-    S(local.href),
-    local.data!,
-    local.queryStringArrayFormat
-  );
+  const sanitized = mergeProps(defaulted, {
+    as: S.lower(defaulted.as) as keyof JSX.IntrinsicElements,
+    method: S.lower(defaulted.method) as Method,
+    preserveState: defaulted.preserveState ?? defaulted.method !== "get",
+  });
 
-  local = mergeProps(local, { data });
+  const visitData = createMemo(() => {
+    const [href, data] = mergeDataIntoQueryString(
+      sanitized.method,
+      S(sanitized.href),
+      sanitized.data,
+      sanitized.queryStringArrayFormat
+    );
 
-  if (local.as === "a") {
-    attributes = mergeProps(attributes, { href });
+    return { href, data };
+  });
 
-    if (local.method !== "get") {
-      console.warn(
-        `Creating POST/PUT/PATCH/DELETE <a> links is discouraged as it causes "Open Link in New Tab/Window" accessibility issues. Use 'as="button"' instead.`
-      );
-    }
-  }
+  const click = (event: KeyboardEvent | MouseEvent) => {
+    sanitized.onClick(event as MouseEvent);
 
-  const visit = (event: MouseEvent) => {
-    if (isServer) return;
-
-    local.onClick?.(event);
-
-    // @ts-expect-error
-    if (shouldIntercept(event)) {
+    if (shouldIntercept(event as KeyboardEvent)) {
       event.preventDefault();
 
-      router.visit(local.href, {
-        data: local.data,
-        method: local.method,
-        preserveScroll: local.preserveScroll,
-        preserveState: local.preserveState ?? local.method === "get",
-        replace: local.replace,
-        only: local.only,
-        headers: local.headers,
-        onCancelToken: local.onCancelToken || noop,
-        onBefore: local.onBefore || noop,
-        onStart: local.onStart || noop,
-        onProgress: local.onProgress || noop,
-        onFinish: local.onFinish || noop,
-        onCancel: local.onCancel || noop,
-        onSuccess: local.onSuccess || noop,
-        onError: local.onError || noop,
+      router.visit(visitData().href, {
+        ...sanitized,
+        data: visitData().data,
       });
     }
   };
@@ -137,9 +123,11 @@ export function Link(
   return (
     <Dynamic
       {...attributes}
-      component={local.as}
-      onClick={visit}
-      children={local.children}
+      component={sanitized.as}
+      // @ts-ignore
+      href={sanitized.as === "a" ? visitData().href : undefined}
+      children={sanitized.children}
+      onClick={click}
     />
   );
 }
