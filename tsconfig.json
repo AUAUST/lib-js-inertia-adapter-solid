@@ -6,13 +6,16 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "types": ["node"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "isolatedModules": true,
-    "declaration": false,
-    "skipLibCheck": true
+    "noEmit": true,
+    "skipLibCheck": true,
+    "baseUrl": "."
   },
-  "include": ["src"]
+  "exclude": ["node_modules", "dist", "./dev"]
 }
