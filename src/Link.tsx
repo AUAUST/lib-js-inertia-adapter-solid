@@ -1,3 +1,4 @@
+import { S } from "@auaust/primitive-kit";
 import {
   mergeDataIntoQueryString,
   router,
@@ -31,7 +32,7 @@ type InertiaLinkProps = {
   onCancelToken?: (cancelToken: any) => void;
   onBefore?: () => void;
   onStart?: () => void;
-  onProgress?: (progress: Progress) => void;
+  onProgress?: (progress?: Progress) => void;
   onFinish?: () => void;
   onCancel?: () => void;
   onSuccess?: () => void;
@@ -41,7 +42,8 @@ type InertiaLinkProps = {
 const noop = () => {};
 
 export function Link(
-  props: ParentProps<InertiaLinkProps> & ComponentProps<InertiaLinkProps["as"]>
+  props: ParentProps<InertiaLinkProps> &
+    ComponentProps<NonNullable<InertiaLinkProps["as"]>>
 ) {
   let [local, attributes] = splitProps(props, [
     "children",
@@ -64,23 +66,19 @@ export function Link(
     "onCancel",
     "onSuccess",
     "onError",
-    "async",
-    "cacheFor",
-    "prefetch",
   ]);
 
   // Set default prop values
   local = mergeProps(
     {
-      as: "a",
+      as: "a" as const,
       data: {},
-      method: "get",
+      method: "get" as const,
       preserveScroll: false,
-      preserveState: null,
       replace: false,
       only: [],
       headers: {},
-      queryStringArrayFormat: "brackets",
+      queryStringArrayFormat: "brackets" as const,
       async: false,
       cacheFor: 0,
       prefetch: false,
@@ -88,16 +86,10 @@ export function Link(
     local
   );
 
-  // Mutate (once) props into prover values
-  local = mergeProps(local, {
-    as: local.as.toLowerCase() as InertiaLinkProps["as"],
-    method: local.method.toLowerCase() as Method,
-  });
-
   const [href, data] = mergeDataIntoQueryString(
-    local.method,
-    local.href || "",
-    local.data,
+    S.lower(local.method) || "get",
+    S(local.href),
+    local.data!,
     local.queryStringArrayFormat
   );
 

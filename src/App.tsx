@@ -7,7 +7,7 @@ import {
   type ParentProps,
 } from "solid-js";
 import { createMutable, createStore, reconcile } from "solid-js/store";
-import { isServer } from "solid-js/web";
+import { Dynamic, isServer } from "solid-js/web";
 import { PageContext } from "./usePage";
 
 export type InertiaAppProps = {
@@ -53,7 +53,7 @@ export function App(props: ParentProps<InertiaAppProps>) {
   if (!isServer) {
     router.init({
       initialPage: props.initialPage,
-      resolveComponent: props.resolveComponent,
+      resolveComponent: props.resolveComponent!,
       async swapComponent({ component, page, preserveState }) {
         setCurrent(
           reconcile({
@@ -71,8 +71,15 @@ export function App(props: ParentProps<InertiaAppProps>) {
     const Layout = current.layouts[i];
 
     // When there is no more wrapper layout, render the component
-    if (!Layout)
-      return <current.component key={current.key} {...current.page.props} />;
+    if (!Layout) {
+      return (
+        <Dynamic
+          component={current.component!}
+          key={current.key}
+          {...current.page.props}
+        />
+      );
+    }
 
     return <Layout {...current.page}>{children(i + 1)}</Layout>;
   };

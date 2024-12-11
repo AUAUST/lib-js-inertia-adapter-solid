@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
+    "strict": true,
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "types": ["node"],
+    "isolatedModules": true,
     "declaration": false,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  "include": ["src"]
 }

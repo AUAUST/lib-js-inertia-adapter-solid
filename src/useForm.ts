@@ -63,9 +63,9 @@ function createRememberStore<TValue extends object>(
     restored = router.restore(key);
   }
 
-  const [store, setStore] = createStore<TValue>(restored ?? value);
+  const [store, setStore] = createStore<TValue>((restored ?? value) as TValue);
 
-  function setStoreTrap(...args) {
+  function setStoreTrap(...args: any[]) {
     // @ts-expect-error
     setStore(...args);
 
@@ -97,7 +97,9 @@ export function useForm<TForm extends FormState>(
     ? rememberKeyOrInitialValues
     : undefined;
 
+  // @ts-expect-error
   let cancelToken = null,
+    // @ts-expect-error
     recentlySuccessfulTimeout = null,
     transform: (data: TForm) => RequestPayload = (data) =>
       data as RequestPayload;
@@ -144,6 +146,7 @@ export function useForm<TForm extends FormState>(
       maybeValue?: unknown
     ) {
       if (typeof fieldOrFields === "undefined") {
+        // @ts-expect-error
         setDefaults((defaults) => Object.assign(defaults, clone(data)));
 
         return this;
@@ -156,6 +159,7 @@ export function useForm<TForm extends FormState>(
         >;
       }
 
+      // @ts-expect-error
       setDefaults((defaults) => Object.assign(defaults, fieldOrFields));
 
       return this;
@@ -163,15 +167,18 @@ export function useForm<TForm extends FormState>(
 
     reset(...fields: string[]) {
       if (fields.length === 0) {
+        // @ts-expect-error
         setData(reconcile(defaults()));
 
         return this;
       }
 
       setData(
+        // @ts-expect-error
         Object.keys(defaults())
           .filter((key) => fields.includes(key))
           .reduce((carry, key) => {
+            // @ts-expect-error
             carry[key] = defaults()[key];
             return carry;
           }, {}) as TForm
@@ -213,6 +220,7 @@ export function useForm<TForm extends FormState>(
       }
 
       setErrors((errors) =>
+        // @ts-expect-error
         Object.keys(defaults()).reduce(
           (carry, field) =>
             Object.assign(
@@ -271,6 +279,7 @@ export function useForm<TForm extends FormState>(
               setWasSuccessful(false);
               setRecentlySuccessful(false);
             });
+            // @ts-expect-error
             clearTimeout(recentlySuccessfulTimeout);
 
             return call(options.onBefore, undefined, visit);
@@ -309,6 +318,7 @@ export function useForm<TForm extends FormState>(
               setProcessing(false);
               setProgress(undefined);
 
+              // @ts-expect-error
               store.clearErrors().setError(errors);
             });
 
@@ -341,6 +351,7 @@ export function useForm<TForm extends FormState>(
     },
 
     cancel() {
+      // @ts-expect-error
       cancelToken && cancelToken.cancel();
     },
   };
@@ -348,6 +359,7 @@ export function useForm<TForm extends FormState>(
   const proxy = new Proxy(store, {
     get(target, property) {
       if (property in target) {
+        // @ts-expect-error
         return target[property];
       }
 

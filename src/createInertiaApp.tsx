@@ -1,3 +1,4 @@
+import { F, O, S } from "@auaust/primitive-kit";
 import { setupProgress, type Page, type PageResolver } from "@inertiajs/core";
 import { Component } from "solid-js";
 import {
@@ -54,13 +55,14 @@ export async function createInertiaApp({
 }: CreateInertiaCSROptions | CreateInertiaSSROptions): Promise<
   CreateInertiaCSRReturnType | CreateInertiaSSRReturnType
 > {
-  const el = isServer ? null : document.getElementById(id);
-  const initialPage = page || JSON.parse(el.dataset.page);
+  const el = isServer ? null : document.getElementById(id),
+    initialPage = page || JSON.parse(S(el?.dataset.page) || "{}");
+
   const resolveComponent = (name: string) =>
     Promise.resolve(resolve(name)).then(
-      (module: { default: Component } | Component) => {
-        if (!module) return null;
-        return "default" in module ? module.default : module;
+      (module: unknown): Component | undefined => {
+        if (!module) return undefined;
+        return (O.in("default", module) ? module.default : module) as Component;
       }
     );
 
@@ -71,22 +73,18 @@ export async function createInertiaApp({
   };
 
   if (isServer) {
+    const head = [getAssets(), generateHydrationScript()];
+
     const body = renderToString(() => (
       <div id={id} data-page={JSON.stringify(initialPage)}>
         <App {...props} />
       </div>
     ));
 
-    const head = [getAssets(), generateHydrationScript()];
-
     return { head, body };
   }
 
   !isServer && progress && setupProgress(progress);
 
-  setup({
-    el,
-    App,
-    props,
-  });
+  F.call(setup, null, { el, App, props });
 }
