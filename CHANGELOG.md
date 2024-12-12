@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.3
+
+### Patch Changes
+
+- c7808d1: Update build tool, cleaner code
+
 ## 0.4.2
 
 ### Patch Changes
