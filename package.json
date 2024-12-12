@@ -49,7 +49,7 @@
     "esbuild-plugin-solid": "^0.6.0",
     "jsdom": "^25.0.1",
     "rimraf": "^5.0.9",
-    "solid-js": "^1.8.18",
+    "solid-js": "^1.9.3",
     "tsup": "^8.3.5",
     "tsup-preset-solid": "^2.2.0",
     "typescript": "^5.5.3",
