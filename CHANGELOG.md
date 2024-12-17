@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.8
+
+### Patch Changes
+
+- ee764b9: Fix `<Link>`'s `as` behaviour
+
 ## 0.4.7
 
 ### Patch Changes
