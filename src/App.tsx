@@ -26,10 +26,11 @@ type InertiaAppState = {
 };
 
 function extractLayouts(component: unknown) {
+  if (!component) return [];
+
   const layout = (component as any).layout;
 
   if (!layout) return [];
-
   if (F.is(layout)) return [layout];
   if (A.is(layout)) return layout;
 
