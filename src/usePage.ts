@@ -13,3 +13,8 @@ export function usePage<P extends PageProps = PageProps>(): Page<P> {
   // @ts-expect-error
   return page;
 }
+
+export function useProps<P extends PageProps = PageProps>(): P {
+  // @ts-expect-error
+  return usePage().props;
+}
