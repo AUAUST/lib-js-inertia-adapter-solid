@@ -73,13 +73,19 @@ export async function createInertiaApp({
   };
 
   if (isServer) {
-    const head = [getAssets(), generateHydrationScript()];
-
     const body = renderToString(() => (
       <div id={id} data-page={JSON.stringify(initialPage)}>
         <App {...props} />
       </div>
     ));
+
+    /**
+     * @important
+     * Solid's `getAssets()` internally uses the `sharedConfig.context` object which is initialized
+     * by the call to `renderToString` above. This means putting the call to `getAssets` before
+     * the call to `renderToString` will result in an error; let it here!
+     */
+    const head = [getAssets(), generateHydrationScript()];
 
     return { head, body };
   } else if (progress) {
