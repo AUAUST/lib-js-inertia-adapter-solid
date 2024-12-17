@@ -90,13 +90,12 @@ export function Link(
   );
 
   const sanitized = mergeProps(defaulted, {
-    as: S.lower(defaulted.as) as keyof JSX.IntrinsicElements,
     method: S.lower(defaulted.method) as Method,
     preserveState: defaulted.preserveState ?? defaulted.method !== "get",
   });
 
-  const as = createMemo(
-    () => sanitized.as ?? (sanitized.method === "get" ? "a" : "button")
+  const as = createMemo(() =>
+    S.lower(sanitized.as || (sanitized.method === "get" ? "a" : "button"))
   );
 
   const visitData = createMemo(() => {
