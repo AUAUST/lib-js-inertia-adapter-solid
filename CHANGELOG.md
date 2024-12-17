@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.7
+
+### Patch Changes
+
+- 5c1d862: `<Link>` defaults to `<button>` for non-GET requests
+
 ## 0.4.6
 
 ### Patch Changes
