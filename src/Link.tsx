@@ -128,7 +128,7 @@ export function Link(
       {...attributes}
       component={as()}
       // @ts-ignore
-      href={sanitized.as === "a" ? visitData().href : undefined}
+      href={as() === "a" ? visitData().href : undefined}
       children={sanitized.children}
       onClick={click}
     />
