@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.6
+
+### Patch Changes
+
+- f2053cd: Expose a convenient `useProps()` function
+
 ## 0.4.5
 
 ### Patch Changes
