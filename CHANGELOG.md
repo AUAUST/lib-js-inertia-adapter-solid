@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.5
+
+### Patch Changes
+
+- e223c0c: Handle component resolved to `null`
+
 ## 0.4.4
 
 ### Patch Changes
