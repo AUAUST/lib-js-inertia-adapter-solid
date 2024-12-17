@@ -109,10 +109,10 @@ export function Link(
     return { href, data };
   });
 
-  const click = (event: KeyboardEvent | MouseEvent) => {
-    sanitized.onClick(event as MouseEvent);
+  const click = (event: MouseEvent) => {
+    sanitized.onClick(event);
 
-    if (shouldIntercept(event as KeyboardEvent)) {
+    if (shouldIntercept(event)) {
       event.preventDefault();
 
       router.visit(visitData().href, {
