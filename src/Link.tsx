@@ -69,7 +69,6 @@ export function Link(
 
   const defaulted = mergeProps(
     {
-      as: "a" as const,
       method: "get" as const,
       data: {},
       preserveScroll: false,
@@ -95,6 +94,10 @@ export function Link(
     method: S.lower(defaulted.method) as Method,
     preserveState: defaulted.preserveState ?? defaulted.method !== "get",
   });
+
+  const as = createMemo(
+    () => sanitized.as ?? (sanitized.method === "get" ? "a" : "button")
+  );
 
   const visitData = createMemo(() => {
     const [href, data] = mergeDataIntoQueryString(
@@ -123,7 +126,7 @@ export function Link(
   return (
     <Dynamic
       {...attributes}
-      component={sanitized.as}
+      component={as()}
       // @ts-ignore
       href={sanitized.as === "a" ? visitData().href : undefined}
       children={sanitized.children}
