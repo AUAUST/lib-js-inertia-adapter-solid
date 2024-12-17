@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.4
+
+### Patch Changes
+
+- 6732dde: Fix SSR
+
 ## 0.4.3
 
 ### Patch Changes
