@@ -94,8 +94,8 @@ export function Link(
     preserveState: defaulted.preserveState ?? defaulted.method !== "get",
   });
 
-  const as = createMemo(() =>
-    S.lower(sanitized.as || (sanitized.method === "get" ? "a" : "button"))
+  const as = createMemo(
+    () => S.lower(sanitized.as) || (sanitized.method === "get" ? "a" : "button")
   );
 
   const visitData = createMemo(() => {
