@@ -1,4 +1,4 @@
-import { F, O, S } from "@auaust/primitive-kit";
+import { O, S } from "@auaust/primitive-kit";
 import { setupProgress, type Page, type PageResolver } from "@inertiajs/core";
 import { Component } from "solid-js";
 import {
@@ -55,7 +55,7 @@ export async function createInertiaApp({
 }: CreateInertiaCSROptions | CreateInertiaSSROptions): Promise<
   CreateInertiaCSRReturnType | CreateInertiaSSRReturnType
 > {
-  const el = isServer ? null : document.getElementById(id),
+  const el = isServer ? null! : document.getElementById(id)!,
     initialPage = page || JSON.parse(S(el?.dataset.page) || "{}");
 
   const resolveComponent = (name: string) =>
@@ -73,11 +73,14 @@ export async function createInertiaApp({
   };
 
   if (isServer) {
-    const body = renderToString(() => (
-      <div id={id} data-page={JSON.stringify(initialPage)}>
-        <App {...props} />
-      </div>
-    ));
+    /**
+     * @important
+     * Including the `<div id="${id}">` element within the `renderToString` call breaks Solid's hydration process.
+     * @see https://github.com/solidjs/solid/issues/2384#issuecomment-2551903862
+     */
+    const body = `<div id="${id}" data-page="${JSON.stringify(
+      initialPage
+    )}">${renderToString(() => <App {...props} />)}</div>`;
 
     /**
      * @important
@@ -92,5 +95,5 @@ export async function createInertiaApp({
     setupProgress(progress);
   }
 
-  F.call(setup, null, { el, App, props });
+  setup?.({ el, App, props });
 }
