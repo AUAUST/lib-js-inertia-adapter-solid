@@ -78,9 +78,11 @@ export async function createInertiaApp({
      * Including the `<div id="${id}">` element within the `renderToString` call breaks Solid's hydration process.
      * @see https://github.com/solidjs/solid/issues/2384#issuecomment-2551903862
      */
-    const body = `<div id="${id}" data-page="${JSON.stringify(
+    const body = `<div id="${id}" data-page='${JSON.stringify(
       initialPage
-    )}">${renderToString(() => <App {...props} />)}</div>`;
+    ).replaceAll("'", "&#39;")}'>${renderToString(() => (
+      <App {...props} />
+    ))}</div>`;
 
     /**
      * @important
