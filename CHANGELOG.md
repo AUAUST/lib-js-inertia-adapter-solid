@@ -1,5 +1,12 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.9
+
+### Patch Changes
+
+- e471a40: Update to InertiaJS@1.3.0
+- a8f905a: Fixed SSR
+
 ## 0.4.8
 
 ### Patch Changes
