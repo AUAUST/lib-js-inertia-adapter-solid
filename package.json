@@ -3,7 +3,7 @@
   "description": "A better maintained fork of the SolidJS adapter for Inertia.js",
   "license": "GPL-3.0-only",
   "type": "module",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "private": false,
   "publishConfig": {
     "access": "public"
