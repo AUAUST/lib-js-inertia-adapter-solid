@@ -15,8 +15,13 @@ const preset_options: PresetOptions = {
       dev_entry: true,
     },
     {
+      name: "server",
       entry: "src/server.ts",
       server_entry: true,
+    },
+    {
+      name: "extras",
+      entry: "src/extras/index.ts",
     },
   ],
   cjs: true,
