@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.10
+
+### Patch Changes
+
+- bfa0af9: `extras` entry point with unofficial features
+
 ## 0.4.9
 
 ### Patch Changes
