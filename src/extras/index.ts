@@ -34,7 +34,7 @@ export const isServerRendered = () => {
 };
 
 /**
- * Returns either `hydrate` or `render` depending on if the document has been
+ * Returns either `hydrate` or `render` depending on whether the document has been
  * server-rendered. Always returns `render` in the server.
  *
  * This is useful to handle the possibility of the backend failing to render.
