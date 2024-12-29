@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.12
+
+### Patch Changes
+
+- b186154: Added comments and expose `InertiaLinkProps`
+
 ## 0.4.11
 
 ### Patch Changes
