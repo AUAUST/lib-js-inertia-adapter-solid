@@ -17,7 +17,7 @@ import {
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
-type InertiaLinkProps = {
+export type InertiaLinkProps = {
   as?: keyof JSX.IntrinsicElements;
   data?: Record<string, FormDataConvertible>;
   href: string;
@@ -41,8 +41,14 @@ type InertiaLinkProps = {
 
 const noop = () => undefined;
 
+/**
+ * The `Link` component is used to navigate to Inertia.js pages.
+ *
+ * If it is not explicitly specified, the `as` prop will default
+ * to `"a"` for `GET` requests and `"button"` for all other requests.
+ */
 export function Link(
-  props: ParentProps<InertiaLinkProps> & JSX.HTMLAttributes<HTMLAnchorElement>
+  props: ParentProps<InertiaLinkProps> & JSX.IntrinsicElements["a"]
 ) {
   const [local, attributes] = splitProps(props, [
     "children",
