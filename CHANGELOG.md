@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.11
+
+### Patch Changes
+
+- 17b856d: `server` entrypoint exposes named `createServer` export
+
 ## 0.4.10
 
 ### Patch Changes
