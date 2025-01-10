@@ -40,13 +40,17 @@ export const isServerRendered = () => {
  * This is useful to handle the possibility of the backend failing to render.
  */
 export const hydrateOrRender: typeof hydrate = (...args) => {
-  const method = isServerRendered() ? hydrate : render;
+  const ssr = isServerRendered();
+  const method = ssr ? hydrate : render;
+
+  // @ts-expect-error - Allows to check if the document has been server-rendered.
+  globalThis.__SSR__ = ssr;
 
   if (isDev) {
-    if (method === render) {
-      console.warn("The application is being client-side rendered.");
-    } else {
+    if (ssr) {
       console.info("The application is being hydrated.");
+    } else {
+      console.warn("The application is being client-side rendered.");
     }
   }
 
