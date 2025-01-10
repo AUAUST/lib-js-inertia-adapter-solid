@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.4.13
+
+### Patch Changes
+
+- f1b8ee3: Expose rendering mode under `__SSR__` global
+
 ## 0.4.12
 
 ### Patch Changes
