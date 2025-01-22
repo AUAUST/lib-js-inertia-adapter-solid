@@ -1,22 +1,19 @@
 import { router } from "@inertiajs/core";
-import { createEffect, createSignal, type Signal } from "solid-js";
+import { createEffect, createSignal, on, type Signal } from "solid-js";
 import { isServer } from "solid-js/web";
 
 export function useRemember<State = unknown>(
   initialState: State,
   key?: string
 ): Signal<State> {
-  const restored = isServer
-    ? undefined
-    : (router.restore(key) as State | undefined);
+  // @ts-expect-error
+  const restored: State = isServer ? undefined! : router.restore(key);
 
   const [state, setState] = createSignal<State>(
-    restored !== undefined ? restored : initialState
+    restored === undefined ? initialState : restored
   );
 
-  createEffect(() => {
-    router.remember(state(), key);
-  });
+  createEffect(on(state, (value) => router.remember(value, key)));
 
   return [state, setState];
 }
