@@ -1,17 +1,23 @@
 import { call } from "@auaust/primitive-kit/functions";
-import { clone, equals, keys } from "@auaust/primitive-kit/objects";
+import {
+  clone,
+  equals,
+  keys as objectKeys,
+  pick,
+} from "@auaust/primitive-kit/objects";
 import { isString } from "@auaust/primitive-kit/strings";
 import {
   router,
-  type GlobalEventsMap,
+  type FormDataConvertible,
   type Method,
+  type Progress,
   type RequestPayload,
   type VisitOptions,
 } from "@inertiajs/core";
-import { batch, createMemo, createSignal } from "solid-js";
+import { batch, createMemo, createSignal, Signal } from "solid-js";
 import {
   createStore,
-  reconcile,
+  produce,
   unwrap,
   type SetStoreFunction,
   type Store,
@@ -19,230 +25,232 @@ import {
 import { isServer } from "solid-js/web";
 import { useRemember } from "./useRemember";
 
-type FormState = Record<string, unknown>;
-type FormErrors<TForm extends FormState> = Partial<Record<keyof TForm, string>>;
+type StringRecord = Record<string, unknown>;
+type FormErrors<Data extends StringRecord> = Partial<
+  Record<keyof Data, string>
+>;
+type FormOptions = Omit<VisitOptions, "data">;
+type DataSetter<Data extends StringRecord> =
+  | ((data: Data) => void)
+  | ((data: (previous: Data) => Data) => void)
+  | (<K extends keyof Data>(key: K, value: Data[K]) => void);
+type CancelToken = { cancel: VoidFunction };
 
-interface InertiaFormProps<TForm extends FormState> {
-  get isDirty(): boolean;
-  defaults(): this;
-  defaults(field: keyof TForm, value: unknown): this;
-  defaults(fields: TForm): this;
-  reset(...fields: string[]): this;
-
-  transform(callback: (data: TForm) => RequestPayload): this;
-
-  get errors(): FormErrors<TForm>;
-  get hasErrors(): boolean;
-  setError(field: keyof TForm, value: string): this;
-  setError(fields: Record<keyof TForm, string>): this;
-  clearErrors(...fields: string[]): this;
-
-  get processing(): boolean;
-  get progress(): GlobalEventsMap["progress"]["parameters"][0];
-  get wasSuccessful(): boolean;
-  get recentlySuccessful(): boolean;
-
-  get(url: string, options?: Partial<VisitOptions>): void;
-  post(url: string, options?: Partial<VisitOptions>): void;
-  put(url: string, options?: Partial<VisitOptions>): void;
-  patch(url: string, options?: Partial<VisitOptions>): void;
-  delete(url: string, options?: Partial<VisitOptions>): void;
-  submit(method: Method, url: string, options: Partial<VisitOptions>): void;
-  cancel(): void;
+export interface InertiaFormProps<Data extends StringRecord> {
+  data: Data;
+  isDirty: boolean;
+  errors: Partial<Record<keyof Data, string>>;
+  hasErrors: boolean;
+  processing: boolean;
+  progress: Progress | null;
+  wasSuccessful: boolean;
+  recentlySuccessful: boolean;
+  setData: DataSetter<Data>;
+  transform: (callback: (data: Data) => object) => void;
+  setDefaults(): void;
+  setDefaults(field: keyof Data, value: FormDataConvertible): void;
+  setDefaults(fields: Partial<Data>): void;
+  reset: (...fields: (keyof Data)[]) => void;
+  clearErrors: (...fields: (keyof Data)[]) => void;
+  setError(field: keyof Data, value: string): void;
+  setError(errors: Record<keyof Data, string>): void;
+  submit: (method: Method, url: string, options?: FormOptions) => void;
+  get: (url: string, options?: FormOptions) => void;
+  patch: (url: string, options?: FormOptions) => void;
+  post: (url: string, options?: FormOptions) => void;
+  put: (url: string, options?: FormOptions) => void;
+  delete: (url: string, options?: FormOptions) => void;
+  cancel: () => void;
 }
 
-function createRememberStore<TValue extends object>(
-  value: TValue | undefined,
-  key: string | undefined,
-  keySuffix: string
-): ReturnType<typeof createStore<TValue>> {
-  let restored = undefined;
-
-  if (!isServer && key !== undefined) {
-    key = `${key}:${keySuffix}`;
-    restored = router.restore(key);
-  }
-
-  const [store, setStore] = createStore<TValue>((restored ?? value) as TValue);
-
-  function setStoreTrap(...args: any[]) {
-    // @ts-expect-error
-    setStore(...args);
-
-    if (!isServer && key !== undefined) {
-      router.remember(unwrap(store), key);
-    }
-  }
-
-  return [store, setStoreTrap];
-}
-
-export type InertiaForm<TForm extends FormState> = [
-  get: Store<TForm> & InertiaFormProps<TForm>,
-  set: SetStoreFunction<TForm>
+export type InertiaForm<Data extends StringRecord> = [
+  get: Store<Data> & InertiaFormProps<Data>,
+  set: SetStoreFunction<Data>
 ];
 
-export function useForm<TForm extends FormState>(
-  initialValues?: TForm
-): InertiaForm<TForm>;
-export function useForm<TForm extends FormState>(
+function useForm<Data extends StringRecord>(
+  initialValues?: Data
+): InertiaForm<Data>;
+function useForm<Data extends StringRecord>(
   rememberKey: string,
-  initialValues?: TForm
-): InertiaForm<TForm>;
-export function useForm<TForm extends FormState>(
-  rememberKeyOrInitialValues?: string | TForm,
-  maybeInitialValues?: TForm
-): InertiaForm<TForm> {
-  const rememberKey = isString(rememberKeyOrInitialValues)
-    ? rememberKeyOrInitialValues
-    : undefined;
+  initialValues?: Data
+): InertiaForm<Data>;
+function useForm<Data extends StringRecord>(
+  keyOrValues?: string | Data,
+  values?: Data
+): InertiaForm<Data> {
+  const key = isString(keyOrValues) ? keyOrValues : undefined;
 
-  // @ts-expect-error
-  let cancelToken = null,
-    // @ts-expect-error
-    recentlySuccessfulTimeout = null,
-    transform: (data: TForm) => RequestPayload = (data) =>
-      data as RequestPayload;
+  let cancelToken: CancelToken | undefined = undefined;
 
-  const [defaults, setDefaults] = createSignal<TForm | undefined>(
-      isString(rememberKeyOrInitialValues)
-        ? maybeInitialValues
-        : rememberKeyOrInitialValues
-    ),
-    [data, setData] = createRememberStore<TForm>(
-      clone(defaults()),
-      rememberKey,
-      "data"
-    );
+  let recentlySuccessfulTimeout: ReturnType<typeof setTimeout> | undefined =
+    undefined;
 
-  const dataMemo = createMemo(() =>
-      unwrap(
-        keys(defaults()).reduce<TForm>((acc, key) => {
-          (acc as any)[key] = data[key];
-          return acc;
-        }, {} as TForm)
-      )
-    ),
-    isDirty = createMemo(() => !equals(dataMemo(), defaults()));
+  let transformer: (data: Data) => RequestPayload = (data: Data) =>
+    data as RequestPayload;
 
-  const [errors, setErrors] = rememberKey
-      ? useRemember<FormErrors<TForm>>({}, `${rememberKey}:errors`)
-      : createSignal<FormErrors<TForm>>({}),
-    hasErrors = createMemo(() => Object.keys(errors()).length > 0);
+  const [defaults, setDefaults] = createSignal<Data | undefined>(
+    isString(keyOrValues) ? values : keyOrValues
+  );
 
-  const [processing, setProcessing] = createSignal<boolean>(false),
-    [progress, setProgress] =
-      createSignal<GlobalEventsMap["progress"]["parameters"][0]>(undefined),
-    [wasSuccessful, setWasSuccessful] = createSignal<boolean>(false),
-    [recentlySuccessful, setRecentlySuccessful] = createSignal<boolean>(false);
+  const [rawData, setData] = ((value) => {
+    const rememberKey = !isServer && isString(key) ? `${key}:data` : undefined;
 
-  const store = {
+    const restored = rememberKey ? router.restore(rememberKey) : undefined;
+
+    const [store, setStore] = createStore<Data>((restored ?? value) as Data);
+
+    const trap: SetStoreFunction<Data> = rememberKey
+      ? // @ts-expect-error
+        (...args) => (setStore(...args), router.remember(unwrap(store), rememberKey)) // prettier-ignore
+      : setStore;
+
+    return [store, trap];
+  })(defaults());
+
+  // The allowlist of form keys, based on the initial values
+  const keys = createMemo(() => objectKeys(defaults()) as (keyof Data)[]);
+
+  const data = createMemo(() => pick(rawData, keys()));
+
+  const isDirty = createMemo(() => !equals(data(), defaults()));
+
+  const [errors, setErrors]: Signal<FormErrors<Data>> = key
+    ? useRemember({}, `${key}:errors`)
+    : createSignal({});
+
+  const hasErrors = createMemo(() => Object.keys(errors()).length > 0);
+
+  const [processing, setProcessing] = createSignal(false);
+
+  const [progress, setProgress] = createSignal<Progress | undefined>();
+
+  const [wasSuccessful, setWasSuccessful] = createSignal(false);
+
+  const [recentlySuccessful, setRecentlySuccessful] = createSignal(false);
+
+  const form = {
+    /** The form data. */
+    get data(): Data {
+      return data();
+    },
+
+    /** Whether any of the form field was changed. */
     get isDirty() {
       return isDirty();
     },
 
-    defaults(
-      fieldOrFields?: keyof TForm | Record<keyof TForm, unknown>,
+    /** Set the default values for the form fields. */
+    setDefaults(
+      fieldOrFields?: keyof Data | Record<keyof Data, unknown>,
       maybeValue?: unknown
     ) {
-      if (typeof fieldOrFields === "undefined") {
-        // @ts-expect-error
-        setDefaults((defaults) => Object.assign(defaults, clone(data)));
+      if (fieldOrFields === undefined) {
+        setDefaults(() => clone(rawData));
+      } else {
+        const newDefaults = isString(fieldOrFields)
+          ? { [fieldOrFields]: maybeValue }
+          : fieldOrFields;
 
-        return this;
+        setDefaults(
+          produce((defaults) => {
+            for (const field of objectKeys(newDefaults)) {
+              // @ts-expect-error
+              defaults[field] = newDefaults[field];
+            }
+          })
+        );
       }
-
-      if (isString(fieldOrFields)) {
-        fieldOrFields = { [fieldOrFields]: maybeValue } as Record<
-          keyof TForm,
-          unknown
-        >;
-      }
-
-      // @ts-expect-error
-      setDefaults((defaults) => Object.assign(defaults, fieldOrFields));
 
       return this;
     },
 
     reset(...fields: string[]) {
       if (fields.length === 0) {
-        // @ts-expect-error
-        setData(reconcile(defaults()));
+        setData(clone(defaults())!);
+      } else {
+        setData(
+          produce((data) => {
+            const initial = defaults();
 
-        return this;
+            for (const field of fields) {
+              // @ts-expect-error
+              data[field] = initial?.[field];
+            }
+
+            return data;
+          })
+        );
       }
 
-      setData(
-        // @ts-expect-error
-        Object.keys(defaults())
-          .filter((key) => fields.includes(key))
-          .reduce((carry, key) => {
-            // @ts-expect-error
-            carry[key] = defaults()[key];
-            return carry;
-          }, {}) as TForm
-      );
-
       return this;
     },
 
-    transform(callback: typeof transform) {
-      transform = callback;
-
+    /** Provide a callback to transform the form data before submission. */
+    transform(callback: typeof transformer) {
+      transformer = callback;
       return this;
     },
 
+    /** The error messages for the form fields. */
     get errors() {
       return errors();
     },
+
+    /** Whether the form has any errors. */
     get hasErrors() {
       return hasErrors();
     },
+
+    /** Set the error message for the given field. */
     setError(
-      fieldOrFields: keyof TForm | Record<keyof TForm, string>,
+      fieldOrFields: keyof Data | Record<keyof Data, string>,
       maybeValue?: string
     ) {
-      if (typeof fieldOrFields === "string") {
-        // @ts-expect-error
-        fieldOrFields = { [fieldOrFields]: maybeValue };
-      }
+      const newErrors = isString(fieldOrFields)
+        ? { [fieldOrFields]: maybeValue }
+        : fieldOrFields;
 
-      setErrors((errors) => Object.assign(errors, fieldOrFields));
+      setErrors((errors) => Object.assign(errors, newErrors));
 
       return this;
     },
+
+    /** Clear the error messages for the given fields, or all fields if none are provided. */
     clearErrors(...fields: string[]) {
       if (fields.length === 0) {
         setErrors({});
+      } else {
+        setErrors((errors) => {
+          const newErrors = { ...errors };
 
-        return this;
+          for (const field of fields) {
+            delete newErrors[field];
+          }
+
+          return newErrors;
+        });
       }
-
-      setErrors((errors) =>
-        // @ts-expect-error
-        Object.keys(defaults()).reduce(
-          (carry, field) =>
-            Object.assign(
-              carry,
-              !fields.includes(field) ? { [field]: errors[field] } : {}
-            ),
-          {}
-        )
-      );
 
       return this;
     },
 
+    /** Whether a form submission is in progress. */
     get processing() {
       return processing();
     },
+
+    /** While a form submission is in progress, the Axios progress event. */
     get progress() {
       return progress();
     },
+
+    /** Whether the last form submission was successful. */
     get wasSuccessful() {
       return wasSuccessful();
     },
+
+    /** Whether a form submission was successful within the last 2 seconds. */
     get recentlySuccessful() {
       return recentlySuccessful();
     },
@@ -262,112 +270,106 @@ export function useForm<TForm extends FormState>(
     delete(url: string, options?: Partial<VisitOptions>) {
       this.submit("delete", url, options);
     },
+
     submit(method: Method, url: string, options: Partial<VisitOptions> = {}) {
       if (isServer) return;
 
-      const store = this,
-        data = transform(dataMemo()),
-        _options: VisitOptions = {
-          ...options,
-          onCancelToken(token) {
-            cancelToken = token;
+      const payload = transformer(data());
+      const _options: VisitOptions = {
+        ...options,
+        onCancelToken: (token) => (
+          (cancelToken = token), call(options.onCancelToken, undefined, token)
+        ),
+        onBefore(visit) {
+          batch(() => {
+            setWasSuccessful(false);
+            setRecentlySuccessful(false);
+          });
+          clearTimeout(recentlySuccessfulTimeout);
 
-            return call(options.onCancelToken, undefined, token);
-          },
-          onBefore(visit) {
-            batch(() => {
-              setWasSuccessful(false);
-              setRecentlySuccessful(false);
-            });
+          return call(options.onBefore, undefined, visit);
+        },
+        onStart: (visit) => (
+          setProcessing(true), call(options.onStart, undefined, visit)
+        ),
+        onProgress: (event) => (
+          setProgress(event), call(options.onProgress, undefined, event)
+        ),
+        onSuccess(page) {
+          batch(() => {
+            setProcessing(false);
+            setProgress(undefined);
+            setWasSuccessful(true);
+            setRecentlySuccessful(true);
+
+            form.clearErrors();
+          });
+
+          recentlySuccessfulTimeout = setTimeout(
+            () => setRecentlySuccessful(false),
+            2000
+          );
+
+          // setDefaults(() => dataMemo())
+
+          return call(options.onSuccess, undefined, page);
+        },
+        onError(errors) {
+          batch(() => {
+            setProcessing(false);
+            setProgress(undefined);
+
+            form.clearErrors();
             // @ts-expect-error
-            clearTimeout(recentlySuccessfulTimeout);
+            form.setError(errors);
+          });
 
-            return call(options.onBefore, undefined, visit);
-          },
-          onStart(visit) {
-            setProcessing(true);
+          return call(options.onError, undefined, errors);
+        },
+        onCancel() {
+          batch(() => {
+            setProcessing(false);
+            setProgress(undefined);
+          });
 
-            return call(options.onStart, undefined, visit);
-          },
-          onProgress(event) {
-            setProgress(event);
+          return call(options.onCancel);
+        },
+        onFinish(visit) {
+          batch(() => {
+            setProcessing(false);
+            setProgress(undefined);
+          });
+          cancelToken = undefined;
 
-            return call(options.onProgress, undefined, event);
-          },
-          onSuccess(page) {
-            batch(() => {
-              setProcessing(false);
-              setProgress(undefined);
-              setWasSuccessful(true);
-              setRecentlySuccessful(true);
-
-              store.clearErrors();
-            });
-
-            recentlySuccessfulTimeout = setTimeout(
-              () => setRecentlySuccessful(false),
-              2000
-            );
-
-            // setDefaults(() => dataMemo())
-
-            return call(options.onSuccess, undefined, page);
-          },
-          onError(errors) {
-            batch(() => {
-              setProcessing(false);
-              setProgress(undefined);
-
-              // @ts-expect-error
-              store.clearErrors().setError(errors);
-            });
-
-            return call(options.onError, undefined, errors);
-          },
-          onCancel() {
-            batch(() => {
-              setProcessing(false);
-              setProgress(undefined);
-            });
-
-            return call(options.onCancel);
-          },
-          onFinish(visit) {
-            batch(() => {
-              setProcessing(false);
-              setProgress(undefined);
-            });
-            cancelToken = null;
-
-            return call(options.onFinish, undefined, visit);
-          },
-        };
+          return call(options.onFinish, undefined, visit);
+        },
+      };
 
       if (method === "delete") {
-        router.delete(url, { ..._options, data });
+        router.delete(url, { ..._options, data: payload });
       } else {
-        router[method](url, data, _options);
+        router[method](url, payload, _options);
       }
     },
 
-    cancel() {
-      // @ts-expect-error
-      cancelToken && cancelToken.cancel();
-    },
+    cancel: () => (cancelToken && cancelToken.cancel(), undefined),
   };
 
-  const proxy = new Proxy(store, {
-    get(target, property) {
-      if (property in target) {
-        // @ts-expect-error
-        return target[property];
-      }
+  const proxy = new Proxy<InertiaForm<Data>[0]>(
+    // @ts-expect-error
+    form,
+    {
+      get(target, property) {
+        if (Reflect.has(target, property)) {
+          return Reflect.get(target, property);
+        }
 
-      // @ts-expect-error
-      return data[property];
-    },
-  });
+        return Reflect.get(data(), property); // Provided the property wasn't a property of the store, forward it as a getter of the data store
+      },
+    }
+  );
 
-  // @ts-expect-error
   return [proxy, setData];
 }
+
+export { useForm as default, useForm };
