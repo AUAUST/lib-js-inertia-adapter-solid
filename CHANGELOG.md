@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.5.0
+
+### Minor Changes
+
+- bbdf42f: Refactoring and improvement of `useForm()`
+
 ## 0.4.13
 
 ### Patch Changes
