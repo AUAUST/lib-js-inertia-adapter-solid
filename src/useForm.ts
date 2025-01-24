@@ -96,9 +96,9 @@ function useForm<Data extends StringRecord>(
   const [rawData, setData] = ((value) => {
     const rememberKey = !isServer && isString(key) ? `${key}:data` : undefined;
 
-    const restored = rememberKey ? router.restore(rememberKey) : undefined;
-
-    const [store, setStore] = createStore<Data>((restored ?? value) as Data);
+    const [store, setStore] = createStore<Data>(
+      ((rememberKey ? router.restore(rememberKey) : null) ?? value) as Data
+    );
 
     const trap: SetStoreFunction<Data> = rememberKey
       ? // @ts-expect-error
