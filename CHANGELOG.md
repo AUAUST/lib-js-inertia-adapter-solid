@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.5.1
+
+### Patch Changes
+
+- 80226dc: Fix reactivity of form errors
+
 ## 0.5.0
 
 ### Minor Changes
