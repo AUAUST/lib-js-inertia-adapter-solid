@@ -1,3 +1,4 @@
+import { O } from "@auaust/primitive-kit";
 import { call } from "@auaust/primitive-kit/functions";
 import {
   clone,
@@ -79,6 +80,8 @@ function useForm<Data extends StringRecord>(
   keyOrValues?: string | Data,
   values?: Data
 ): InertiaForm<Data> {
+  type FieldName = keyof Data;
+
   const key = isString(keyOrValues) ? keyOrValues : undefined;
 
   let cancelToken: CancelToken | undefined = undefined;
@@ -109,15 +112,15 @@ function useForm<Data extends StringRecord>(
   })(defaults());
 
   // The allowlist of form keys, based on the initial values
-  const keys = createMemo(() => objectKeys(defaults()) as (keyof Data)[]);
+  const keys = createMemo(() => objectKeys(defaults()) as FieldName[]);
 
   const data = createMemo(() => pick(rawData, keys()));
 
   const isDirty = createMemo(() => !equals(data(), defaults()));
 
   const [errors, setErrors]: Signal<FormErrors<Data>> = key
-    ? useRemember({}, `${key}:errors`)
-    : createSignal({});
+    ? useRemember({}, `${key}:errors`, { equals: false })
+    : createSignal({}, { equals: false }); // We want to update the errors even when we keep the same object reference
 
   const hasErrors = createMemo(() => Object.keys(errors()).length > 0);
 
@@ -142,7 +145,7 @@ function useForm<Data extends StringRecord>(
 
     /** Set the default values for the form fields. */
     setDefaults(
-      fieldOrFields?: keyof Data | Record<keyof Data, unknown>,
+      fieldOrFields?: FieldName | Record<FieldName, unknown>,
       maybeValue?: unknown
     ) {
       if (fieldOrFields === undefined) {
@@ -204,7 +207,7 @@ function useForm<Data extends StringRecord>(
 
     /** Set the error message for the given field. */
     setError(
-      fieldOrFields: keyof Data | Record<keyof Data, string>,
+      fieldOrFields: FieldName | Record<FieldName, string>,
       maybeValue?: string
     ) {
       const newErrors = isString(fieldOrFields)
@@ -217,20 +220,12 @@ function useForm<Data extends StringRecord>(
     },
 
     /** Clear the error messages for the given fields, or all fields if none are provided. */
-    clearErrors(...fields: string[]) {
-      if (fields.length === 0) {
-        setErrors({});
-      } else {
-        setErrors((errors) => {
-          const newErrors = { ...errors };
-
-          for (const field of fields) {
-            delete newErrors[field];
-          }
-
-          return newErrors;
-        });
-      }
+    clearErrors(...fields: FieldName[]) {
+      setErrors(() =>
+        fields.length === 0
+          ? {}
+          : (O.omit(errors(), fields) as Partial<Record<FieldName, string>>)
+      );
 
       return this;
     },
