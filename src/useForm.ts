@@ -1,9 +1,10 @@
-import { O } from "@auaust/primitive-kit";
 import { call } from "@auaust/primitive-kit/functions";
 import {
   clone,
   equals,
+  hasKeys,
   keys as objectKeys,
+  omit,
   pick,
 } from "@auaust/primitive-kit/objects";
 import { isString } from "@auaust/primitive-kit/strings";
@@ -122,7 +123,7 @@ function useForm<Data extends StringRecord>(
     ? useRemember({}, `${key}:errors`, { equals: false })
     : createSignal({}, { equals: false }); // We want to update the errors even when we keep the same object reference
 
-  const hasErrors = createMemo(() => Object.keys(errors()).length > 0);
+  const hasErrors = createMemo(() => hasKeys(errors()));
 
   const [processing, setProcessing] = createSignal(false);
 
@@ -221,11 +222,7 @@ function useForm<Data extends StringRecord>(
 
     /** Clear the error messages for the given fields, or all fields if none are provided. */
     clearErrors(...fields: FieldName[]) {
-      setErrors(() =>
-        fields.length === 0
-          ? {}
-          : (O.omit(errors(), fields) as Partial<Record<FieldName, string>>)
-      );
+      setErrors(() => (fields.length === 0 ? {} : omit(errors(), fields)));
 
       return this;
     },
