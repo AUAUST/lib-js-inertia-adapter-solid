@@ -110,7 +110,7 @@ function useForm<Data extends StringRecord>(
       : setStore;
 
     return [store, trap];
-  })(defaults());
+  })(clone(defaults()));
 
   // The allowlist of form keys, based on the initial values
   const keys = createMemo(() => objectKeys(defaults()) as FieldName[]);
