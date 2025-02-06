@@ -1,5 +1,11 @@
 # @auaust/inertia-adapter-solid
 
+## 0.5.2
+
+### Patch Changes
+
+- 6ce2735: Fix props reactively updating forms
+
 ## 0.5.1
 
 ### Patch Changes
